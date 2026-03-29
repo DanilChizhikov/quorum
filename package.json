@@ -1,0 +1,26 @@
+{
+    "name": "com.dtech.utilityai",
+    "displayName": "Utility AI",
+    "version": "1.0.0",
+    "unity": "6000.0",
+    "description": "",
+    "changelogUrl": "https://github.com/DanilChizhikov/utilityai/releases/tag/v1.0.0",
+    "documentationUrl": "https://github.com/DanilChizhikov/utilityai/",
+    "keywords": [
+        "utilityai",
+        "behaviour",
+        "ai"
+    ],
+    "category": "Tools",
+    "author": "DTech",
+    "repository": {
+        "type": "git",
+        "url": "ssh://github.com:DanilChizhikov/utilityai.git",
+        "directory": "com.dtech"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/@DanilChizhikov"
+    },
+    "license": "MIT",
+    "readme": "README.md"
+}
