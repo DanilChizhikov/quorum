@@ -1,0 +1,25 @@
+{
+    "name": "com.dtech.utilityai.unitask",
+    "rootNamespace": "DTech",
+    "references": [
+        "GUID:c1ee0ff3e53a468ba1798ab6f99c2132",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "DTECH_UTILITYAI_UNITASK"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.cysharp.unitask",
+            "expression": "2.1.0",
+            "define": "DTECH_UTILITYAI_UNITASK"
+        }
+    ],
+    "noEngineReferences": false
+}
