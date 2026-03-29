@@ -2,10 +2,8 @@ namespace DTech.UtilityAI
 {
 	public enum UtilityActionState
 	{
-		Idle = 0,
-		Running = 1,
+		Running = 0,
 		Completed = 2,
 		Failed = 3,
-		Cancelled = 4,
 	}
 }

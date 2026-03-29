@@ -1,71 +1,169 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace DTech.UtilityAI
 {
-	public sealed class UtilityBrain
+	public abstract class UtilityBrain<TConfig, TContext> : IUtilityBrain
+		where TConfig : BrainConfig
+		where TContext : IUtilityContext
 	{
-		private readonly List<UtilityActionDefinition> _actionDefinitions;
-		private readonly IUtilityScoreAggregator _scoreAggregator;
+		public event Action OnActionChanged;
+		public event Action<UtilityActionState> OnActionStateChange;
+		
+		private readonly TContext _context;
+		private readonly IBrainUpdateProvider _updateProvider;
+		
+		public bool IsEnabled { get; private set; }
+		public BrainUpdateType UpdateType { get; }
+		public IReadOnlyList<IUtilityAction> Actions => Config.Actions;
+		
+		protected TConfig Config { get; }
+		
+		private bool _isDisposed;
+		private IUtilityAction _currentAction;
+		private bool _hasCurrentAction;
+		private UtilityActionState _lastActionState;
+		private bool _isRequestingSwitchAction;
+		private BrainSwitchStateRequest _request;
 
-		public UtilityBrain(IEnumerable<UtilityActionDefinition> actionDefinitions, IUtilityScoreAggregator scoreAggregator = null)
+		public UtilityBrain(TConfig config)
 		{
-			if (actionDefinitions == null)
+			Config = config;
+			UpdateType = config.UpdateType;
+			_updateProvider = UpdateUtility.GetProvider(config.UpdateType);
+		}
+		
+		public void Enable()
+		{
+			if (IsEnabled)
 			{
-				throw new ArgumentNullException(nameof(actionDefinitions));
+				return;
 			}
 
-			_actionDefinitions = new List<UtilityActionDefinition>(actionDefinitions);
-			_scoreAggregator = scoreAggregator ?? new MaxUtilityScoreAggregator();
+			_currentAction = null;
+			_hasCurrentAction = false;
+			_updateProvider.AddUpdate(Update);
+			IsEnabled = true;
+			RequestSwitchAction();
 		}
 
-		public IReadOnlyList<UtilityActionDefinition> ActionDefinitions => _actionDefinitions;
-
-		public UtilityDecision<IUtilityAction> Decide(IUtilityContext context)
+		public void RequestSwitchAction(float delay = 0f, CancellationToken token = default)
 		{
-			if (context == null)
+			if (!IsEnabled || _isRequestingSwitchAction)
 			{
-				throw new ArgumentNullException(nameof(context));
+				return;
 			}
 
-			int bestIndex = -1;
-			float bestScore = float.NegativeInfinity;
+			_isRequestingSwitchAction = true;
+			_request = new BrainSwitchStateRequest(delay, OnRequestSwitchActionCompleted, token);
+		}
 
-			for (int i = 0; i < _actionDefinitions.Count; i++)
+		public void Update()
+		{
+			if (!IsEnabled || !_hasCurrentAction)
 			{
-				UtilityActionDefinition definition = _actionDefinitions[i];
-				float score = EvaluateActionScore(definition, context);
-				if (score > bestScore)
+				return;
+			}
+
+			UtilityActionState actionState = _currentAction.Tick(_context);
+			if (_lastActionState != actionState)
+			{
+				_lastActionState = actionState;
+				OnActionStateChange?.Invoke(actionState);
+			}
+			
+			if (Config.SwitchActionType == SwitchActionType.Manual)
+			{
+				switch (actionState)
 				{
-					bestScore = score;
-					bestIndex = i;
+					case UtilityActionState.Completed:
+					case UtilityActionState.Failed:
+					{
+						RequestSwitchAction();
+					} break;
+				}
+			}
+		}
+
+		public TAction GetAction<TAction>()
+			where TAction : IUtilityAction
+		{
+			TAction action = TryGetAction(out TAction cachedAction) ? cachedAction : default;
+			return action;
+		}
+
+		public bool TryGetAction<TAction>(out TAction action)
+			where TAction : IUtilityAction
+		{
+			action = default;
+			for (int i = 0; i < Actions.Count; i++)
+			{
+				IUtilityAction utilityAction = Actions[i];
+				if (utilityAction.GetType().IsAssignableFrom(typeof(TAction)))
+				{
+					action = (TAction)utilityAction;
+					return true;
 				}
 			}
 
-			if (bestIndex < 0)
-			{
-				return UtilityDecision<IUtilityAction>.None;
-			}
-
-			UtilityActionDefinition bestDefinition = _actionDefinitions[bestIndex];
-			return new UtilityDecision<IUtilityAction>(bestDefinition.Action, bestScore, bestIndex);
+			return false;
 		}
 
-		private float EvaluateActionScore(UtilityActionDefinition definition, IUtilityContext context)
+		public bool TryGetCurrentAction(out IUtilityAction action)
 		{
-			IReadOnlyList<IUtilityConsideration> considerations = definition.Considerations;
-			if (considerations.Count == 0)
-			{
-				return _scoreAggregator.Aggregate(Array.Empty<float>());
-			}
+			action = _currentAction;
+			return _hasCurrentAction;
+		}
 
-			float[] scores = new float[considerations.Count];
-			for (int i = 0; i < considerations.Count; i++)
+		public void Disable()
+		{
+			if (!IsEnabled)
 			{
-				scores[i] = considerations[i].Evaluate(context);
+				return;
 			}
+		}
+		
+		public void Dispose()
+		{
+			if (_isDisposed)
+			{
+				return;
+			}
+			
+			Disable();
+		}
 
-			return _scoreAggregator.Aggregate(scores);
+		private void SetCurrentAction(IUtilityAction action)
+		{
+			if (action == _currentAction)
+			{
+				return;
+			}
+			
+			if (_hasCurrentAction)
+			{
+				_currentAction.Exit(_context);
+			}
+			
+			_currentAction = action;
+			_hasCurrentAction = _currentAction != null;
+			if (_hasCurrentAction)
+			{
+				_currentAction.Enter(_context);
+			}
+			
+			OnActionChanged?.Invoke();
+		}
+		
+		private void OnRequestSwitchActionCompleted()
+		{
+			_request.Dispose();
+			_request = null;
+			int actionIndex = Config.ScoreAggregator.Aggregate(Actions, _context);
+			IUtilityAction action = actionIndex >= 0 ? Actions[actionIndex] : null;
+			SetCurrentAction(action);
+			_isRequestingSwitchAction = false;
 		}
 	}
 }

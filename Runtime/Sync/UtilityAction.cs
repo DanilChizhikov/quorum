@@ -2,16 +2,25 @@ using UnityEngine;
 
 namespace DTech.UtilityAI
 {
-	public abstract class UtilityAction<TAgent, TContext> : ScriptableObject, IUtilityAction
+	public abstract class UtilityAction : ScriptableObject, IUtilityAction
+	{
+		[field: SerializeField]
+		protected UtilityConsideration Consideration { get; private set; }
+		
+		public abstract void Enter(IUtilityContext context);
+
+		public abstract UtilityActionState Tick(IUtilityContext context);
+
+		public virtual float CalculateUtility(IUtilityContext context) => Consideration.Evaluate(context);
+
+		public abstract void Exit(IUtilityContext context);
+	}
+	
+	public abstract class UtilityAction<TAgent, TContext> : UtilityAction
 		where TAgent : IUtilityAgent
 		where TContext : UtilityContext<TAgent>
 	{
-		public void Initialize(IUtilityContext context)
-		{
-			
-		}
-
-		public void Enter(IUtilityContext context)
+		public override void Enter(IUtilityContext context)
 		{
 			if (context is not TContext genericContext)
 			{
@@ -21,7 +30,7 @@ namespace DTech.UtilityAI
 			Enter(genericContext);
 		}
 
-		public UtilityActionState Tick(IUtilityContext context)
+		public override UtilityActionState Tick(IUtilityContext context)
 		{
 			if (context is not TContext genericContext)
 			{
@@ -31,15 +40,17 @@ namespace DTech.UtilityAI
 			return OnTick(genericContext);
 		}
 
-		public float CalculateUtility(IUtilityContext context)
+		public override float CalculateUtility(IUtilityContext context)
 		{
 			if (context is not TContext genericContext)
 			{
 				return 0f;
 			}
+			
+			return CalculateUtility(genericContext);
 		}
 
-		public void Exit(IUtilityContext context)
+		public override void Exit(IUtilityContext context)
 		{
 			if (context is not TContext genericContext)
 			{
@@ -48,21 +59,10 @@ namespace DTech.UtilityAI
 			
 			Exit(genericContext);
 		}
-
-		public void Cancel(IUtilityContext context)
-		{
-			if (context is not TContext genericContext)
-			{
-				return;
-			}
-			
-			Cancel(genericContext);
-		}
 		
 		protected abstract void Enter(TContext context);
 		protected abstract UtilityActionState OnTick(TContext context);
 		protected abstract float CalculateUtility(TContext context);
 		protected abstract void Exit(TContext context);
-		protected abstract void Cancel(TContext context);
 	}
 }

@@ -2,25 +2,24 @@ using System.Collections.Generic;
 
 namespace DTech.UtilityAI
 {
-	public sealed class MaxUtilityScoreAggregator : IUtilityScoreAggregator
+	public sealed class MaxUtilityScoreAggregator : UtilityScoreAggregator
 	{
-		public float Aggregate(IReadOnlyList<float> considerationScores)
+		public override int Aggregate(IReadOnlyList<IUtilityAction> actions, IUtilityContext context)
 		{
-			if (considerationScores == null || considerationScores.Count == 0)
-			{
-				return 0f;
-			}
-
 			float max = float.NegativeInfinity;
-			for (int i = 0; i < considerationScores.Count; i++)
+			int maxIndex = -1;
+			for (int i = 0; i < actions.Count; i++)
 			{
-				if (considerationScores[i] > max)
+				IUtilityAction action = actions[i];
+				float utility = action.CalculateUtility(context);
+				if (utility > max)
 				{
-					max = considerationScores[i];
+					max = utility;
+					maxIndex = i;
 				}
 			}
-
-			return max;
+			
+			return maxIndex;
 		}
 	}
 }
