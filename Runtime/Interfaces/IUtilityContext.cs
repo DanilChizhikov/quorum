@@ -1,10 +1,10 @@
-using UnityEditor.Experimental.GraphView;
+using DTech.Blackboard;
 
 namespace DTech.UtilityAI
 {
 	public interface IUtilityContext
 	{
 		IUtilityAgent BaseAgent { get; }
-		Blackboard Blackboard { get; }
+		RuntimeBlackboard Blackboard { get; }
 	}
 }

@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
 
 namespace DTech.UtilityAI
 {
+	[Serializable]
+	[UtilityMenu("Max Utility")]
 	public sealed class MaxUtilityScoreAggregator : UtilityScoreAggregator
 	{
 		public override int Aggregate(IReadOnlyList<IUtilityAction> actions, IUtilityContext context)

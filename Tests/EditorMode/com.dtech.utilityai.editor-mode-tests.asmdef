@@ -1,0 +1,25 @@
+{
+    "name": "com.dtech.utilityai.editor-mode-tests",
+    "rootNamespace": "DTech",
+    "references": [
+        "GUID:27619889b8ba8c24980f49ee34dbb44a",
+        "GUID:0acc523941302664db1f4e527237feb3",
+        "GUID:580d36e73d314e36bf83eeb9707ec431",
+        "GUID:c1ee0ff3e53a468ba1798ab6f99c2132"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

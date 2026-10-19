@@ -1,8 +1,9 @@
-using UnityEngine;
+using System;
 
 namespace DTech.UtilityAI
 {
-	public abstract class UtilityConsideration : ScriptableObject
+	[Serializable]
+	public abstract class UtilityConsideration
 	{
 		public abstract float Evaluate(IUtilityContext context);
 	}

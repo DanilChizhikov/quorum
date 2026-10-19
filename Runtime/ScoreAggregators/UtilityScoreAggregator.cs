@@ -1,9 +1,10 @@
+using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace DTech.UtilityAI
 {
-	public abstract class UtilityScoreAggregator : ScriptableObject
+	[Serializable]
+	public abstract class UtilityScoreAggregator
 	{
 		public abstract int Aggregate(IReadOnlyList<IUtilityAction> actions, IUtilityContext context);
 	}

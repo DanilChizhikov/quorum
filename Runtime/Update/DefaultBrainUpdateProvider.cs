@@ -8,5 +8,10 @@ namespace DTech.UtilityAI
 		{
 			UtilityUpdateService.Instance.RegisterUpdate(updateAction);
 		}
+		
+		public override void RemoveUpdate(Action updateAction)
+		{
+			UtilityUpdateService.Instance.UnregisterUpdate(updateAction);
+		}
 	}
 }

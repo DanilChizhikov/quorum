@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace DTech.UtilityAI
 {
@@ -13,12 +15,14 @@ namespace DTech.UtilityAI
 		
 		private readonly TContext _context;
 		private readonly IBrainUpdateProvider _updateProvider;
+		private readonly IUtilityAction[] _actions;
 		
 		public bool IsEnabled { get; private set; }
 		public BrainUpdateType UpdateType { get; }
-		public IReadOnlyList<IUtilityAction> Actions => Config.Actions;
+		public IReadOnlyList<IUtilityAction> Actions => _actions;
 		
 		protected TConfig Config { get; }
+		protected TContext Context => _context;
 		
 		private bool _isDisposed;
 		private IUtilityAction _currentAction;
@@ -27,11 +31,13 @@ namespace DTech.UtilityAI
 		private bool _isRequestingSwitchAction;
 		private BrainSwitchStateRequest _request;
 
-		public UtilityBrain(TConfig config)
+		public UtilityBrain(TConfig config, TContext context, IUtilityActionInjector injector = null)
 		{
-			Config = config;
-			UpdateType = config.UpdateType;
-			_updateProvider = UpdateUtility.GetProvider(config.UpdateType);
+			_context = context;
+			Config = (TConfig)config.CreateRuntimeInstance();
+			UpdateType = Config.UpdateType;
+			_updateProvider = UpdateUtility.GetProvider(UpdateType);
+			_actions = CreateActions(Config, context, injector ?? new NullUtilityActionInjector());
 		}
 		
 		public void Enable()
@@ -43,6 +49,7 @@ namespace DTech.UtilityAI
 
 			_currentAction = null;
 			_hasCurrentAction = false;
+			_lastActionState = UtilityActionState.Running;
 			_updateProvider.AddUpdate(Update);
 			IsEnabled = true;
 			RequestSwitchAction();
@@ -56,7 +63,14 @@ namespace DTech.UtilityAI
 			}
 
 			_isRequestingSwitchAction = true;
-			_request = new BrainSwitchStateRequest(delay, OnRequestSwitchActionCompleted, token);
+			if (delay > 0f)
+			{
+				_request = new BrainSwitchStateRequest(delay, OnRequestSwitchActionCompleted, token);
+			}
+			else
+			{
+				OnRequestSwitchActionCompleted();
+			}
 		}
 
 		public void Update()
@@ -97,14 +111,15 @@ namespace DTech.UtilityAI
 			where TAction : IUtilityAction
 		{
 			action = default;
-			for (int i = 0; i < Actions.Count; i++)
+			for (int i = 0; i < _actions.Length; i++)
 			{
-				IUtilityAction utilityAction = Actions[i];
-				if (utilityAction.GetType().IsAssignableFrom(typeof(TAction)))
+				if (_actions[i] is not TAction typedAction)
 				{
-					action = (TAction)utilityAction;
-					return true;
+					continue;
 				}
+				
+				action = typedAction;
+				return true;
 			}
 
 			return false;
@@ -122,6 +137,13 @@ namespace DTech.UtilityAI
 			{
 				return;
 			}
+			
+			_request?.Dispose();
+			_request = null;
+			_isRequestingSwitchAction = false;
+			_updateProvider.RemoveUpdate(Update);
+			SetCurrentAction(null);
+			IsEnabled = false;
 		}
 		
 		public void Dispose()
@@ -131,7 +153,59 @@ namespace DTech.UtilityAI
 				return;
 			}
 			
+			_isDisposed = true;
 			Disable();
+			for (int i = 0; i < _actions.Length; i++)
+			{
+				if (_actions[i] is IDisposable disposableAction)
+				{
+					disposableAction.Dispose();
+				}
+			}
+			
+			DestroyRuntimeConfig(Config);
+		}
+
+		private static IUtilityAction[] CreateActions(BrainConfig config, IUtilityContext context, IUtilityActionInjector injector)
+		{
+			IReadOnlyList<UtilityAction> configActions = config.Actions;
+			if (configActions == null)
+			{
+				return Array.Empty<IUtilityAction>();
+			}
+
+			var actions = new List<IUtilityAction>(configActions.Count);
+			for (int i = 0; i < configActions.Count; i++)
+			{
+				UtilityAction action = configActions[i];
+				if (action == null)
+				{
+					continue;
+				}
+				
+				injector.Inject(action);
+				action.Initialize(context);
+				actions.Add(action);
+			}
+
+			return actions.ToArray();
+		}
+
+		private static void DestroyRuntimeConfig(BrainConfig config)
+		{
+			if (config == null)
+			{
+				return;
+			}
+
+			if (Application.isPlaying)
+			{
+				Object.Destroy(config);
+			}
+			else
+			{
+				Object.DestroyImmediate(config);
+			}
 		}
 
 		private void SetCurrentAction(IUtilityAction action)
@@ -148,6 +222,7 @@ namespace DTech.UtilityAI
 			
 			_currentAction = action;
 			_hasCurrentAction = _currentAction != null;
+			_lastActionState = UtilityActionState.Running;
 			if (_hasCurrentAction)
 			{
 				_currentAction.Enter(_context);
@@ -158,12 +233,19 @@ namespace DTech.UtilityAI
 		
 		private void OnRequestSwitchActionCompleted()
 		{
-			_request.Dispose();
+			_request?.Dispose();
 			_request = null;
-			int actionIndex = Config.ScoreAggregator.Aggregate(Actions, _context);
-			IUtilityAction action = actionIndex >= 0 ? Actions[actionIndex] : null;
-			SetCurrentAction(action);
 			_isRequestingSwitchAction = false;
+			UtilityScoreAggregator scoreAggregator = Config.ScoreAggregator;
+			if (scoreAggregator == null)
+			{
+				Debug.LogError($"[{GetType().Name}] Score aggregator is not set in config {Config.name}!");
+				return;
+			}
+			
+			int actionIndex = scoreAggregator.Aggregate(_actions, _context);
+			IUtilityAction action = actionIndex >= 0 && actionIndex < _actions.Length ? _actions[actionIndex] : null;
+			SetCurrentAction(action);
 		}
 	}
 }

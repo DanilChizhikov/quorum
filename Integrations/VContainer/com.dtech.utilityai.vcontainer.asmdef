@@ -1,0 +1,25 @@
+{
+    "name": "com.dtech.utilityai.vcontainer",
+    "rootNamespace": "DTech",
+    "references": [
+        "com.dtech.utilityai",
+        "VContainer"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UTILITYAI_VCONTAINER_ENABLED"
+    ],
+    "versionDefines": [
+        {
+            "name": "jp.hadashikick.vcontainer",
+            "expression": "0.0.0",
+            "define": "UTILITYAI_VCONTAINER_ENABLED"
+        }
+    ],
+    "noEngineReferences": false
+}
