@@ -1,0 +1,65 @@
+.uai-root {
+    flex-grow: 1;
+    background-color: var(--unity-colors-window-background);
+}
+
+.uai-summary {
+    padding: 6px 8px;
+    -unity-font-style: bold;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-list {
+    flex-grow: 1;
+}
+
+.uai-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--unity-colors-inspector_titlebar-border);
+}
+
+.uai-row__severity {
+    width: 62px;
+    -unity-font-style: bold;
+    font-size: 10px;
+}
+
+.uai-row__severity--error {
+    color: var(--unity-colors-error-text);
+}
+
+.uai-row__severity--warning {
+    color: var(--unity-colors-warning-text);
+}
+
+.uai-row__severity--info {
+    color: var(--unity-colors-label-text);
+}
+
+.uai-row__body {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+.uai-row__message {
+    white-space: normal;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-row__config {
+    font-size: 10px;
+    color: var(--unity-colors-helpbox-text);
+}
+
+.uai-row__button {
+    min-width: 54px;
+    margin-left: 4px;
+}
+
+.uai-empty {
+    padding: 12px 8px;
+    color: var(--unity-colors-helpbox-text);
+}
