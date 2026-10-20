@@ -16,13 +16,22 @@ dependencies from any DI container - Zenject and VContainer adapters ship with t
     - [UPM Installation](#upm-installation)
 - [Features](#features)
 - [Usage](#usage)
+- [Editor Tools](#editor-tools)
+    - [Config editing](#config-editing)
+    - [Validator](#validator)
+    - [Renamed and moved types](#renamed-and-moved-types)
+    - [Hidden types](#hidden-types)
+    - [Debugger](#debugger)
+    - [Profiler](#profiler)
+    - [Brain Map](#brain-map)
+    - [Scoring Matrix](#scoring-matrix)
 - [License](#license)
 
 ## Getting Started
 
 ### Prerequisites
 - [GIT](https://git-scm.com/downloads)
-- [Unity](https://unity.com/releases/editor/archive) 2022.3+
+- [Unity](https://unity.com/releases/editor/archive) 6000.0+
 
 ### Manual Installation
 1. Download the .unitypackage from the [releases](https://github.com/DanilChizhikov/utilityai/releases/) page.
@@ -32,11 +41,11 @@ dependencies from any DI container - Zenject and VContainer adapters ship with t
 1. Open the manifest.json file in your project's Packages folder.
 2. Add the following line to the dependencies section:
     ```json
-    "com.dtech.logging": "https://github.com/DanilChizhikov/utilityai.git",
+    "com.dtech.utilityai": "https://github.com/DanilChizhikov/utilityai.git",
     ```
 3. Unity will automatically import the package.
 
-If you want to set a target version, Logging uses the `v*.*.*` release tag so you can specify a version like #v1.0.0.
+If you want to set a target version, Utility AI uses the `v*.*.*` release tag so you can specify a version like #v1.0.0.
 
 For example `https://github.com/DanilChizhikov/utilityai.git#v1.0.0`.
 
@@ -47,7 +56,7 @@ For example `https://github.com/DanilChizhikov/utilityai.git#v1.0.0`.
 - One action instance per brain: the config is cloned at construction, so agents never share action state.
 - Dependency injection through `IUtilityActionInjector`, with ready adapters for Zenject and VContainer.
 - Composable considerations (`CompositeUtilityConsideration`: multiply, min, max, average, sum).
-- `ScriptableUtilityAction` assets still work and are referenced from the config through `ScriptableUtilityActionReference`.
+- `ScriptableUtilityAction` assets are referenced from the config through `ScriptableUtilityActionReference`.
 - Update driven by the player loop (`Update`, `FixedUpdate`) or by your own code (`BrainUpdateType.Custom`).
 
 ## Usage
@@ -90,8 +99,8 @@ public sealed class ChaseTargetAction : UtilityAction<EnemyAgent, EnemyContext>
 }
 ```
 An action shows up in the type picker when it is `public`, marked `[Serializable]` and has a public
-parameterless constructor. Types that are only missing `[Serializable]` are listed in a console
-warning when the picker is built.
+parameterless constructor. Types that are only missing `[Serializable]` are collected in the
+[Hidden types](#hidden-types) window.
 
 ### Config and brain
 Create a `BrainConfig` subclass, make an asset of it, then add actions with the `+` button of the
@@ -138,10 +147,65 @@ the define is applied automatically. When Zenject is installed as plain files un
 add `UTILITYAI_ZENJECT_ENABLED` to Scripting Define Symbols manually (same for
 `UTILITYAI_VCONTAINER_ENABLED`).
 
-### Migrating existing configs
-Configs that stored `ScriptableUtilityAction` assets show an "Upgrade Legacy Actions" button in the
-inspector. It wraps every asset into a `ScriptableUtilityActionReference` entry, so the behaviour
-stays the same while the config moves to the new list.
+## Editor Tools
+
+All tooling lives in `com.dtech.utilityai.editor`. The runtime hooks it needs (the live brain registry,
+the switch log and the profiler counters) compile only under `UNITY_EDITOR || DEVELOPMENT_BUILD`, so a
+release build carries none of it.
+
+### Config editing
+The Actions list has a context menu on every entry and on its header: Duplicate, Copy, Paste Values,
+Paste As New Entry, Insert Above/Below, Move To Top/Bottom, Remove, Copy All, Clear. Copy and paste
+carry the whole `[SerializeReference]` subtree (nested considerations included) through the system
+clipboard, so entries move between configs and between projects. Considerations and the score
+aggregator have the same Copy/Paste/Clear menu on their header.
+
+### Validator
+`Window/DTech/Utility AI/Validator` scans every `BrainConfig` in the project: missing score aggregator,
+empty or missing action entries, `ScriptableUtilityActionReference` without an asset, duplicate action
+types, empty or single-child composites and actions that can only ever score 0. Issues for the inspected config are also shown inline in its inspector. Fixable ones offer a Fix
+button; `Fix All` applies every automatic fix.
+
+### Renamed and moved types
+Mark a type with `[UtilityFormerlySerializedType("Old.Namespace.OldName, OldAssembly")]` and press
+`Migrate Types` in the validator. It lists the asset files that reference the former name, asks for
+confirmation and rewrites them on disk, keeping every serialized field value. Nothing runs
+automatically. A missing entry in the inspector also offers `Remap`, which picks a new type for that
+slot - the entry's field values are lost there, so prefer the migration for a rename.
+
+### Hidden types
+A type derived from `UtilityAction`, `UtilityConsideration` or `UtilityScoreAggregator` without
+`[Serializable]` never shows up in the picker. `Window/DTech/Utility AI/Hidden Types` lists those types,
+opens their script and can insert the attribute (and `using System;`) after showing what it will write.
+
+### Debugger
+`Window/DTech/Utility AI/Debugger` lists the live brains, and for the selected one shows the score of
+every action with a bar, the current action and its state, the consideration tree with the score of each
+node, and the last switches with their timestamps. Sampling runs at 10 Hz and stops with `Pause`;
+an exception from `CalculateUtility` is shown in the cell instead of being logged every frame. In play
+mode a `BrainConfig` inspector also lists the live brains built from that asset and opens the debugger
+on them.
+
+### Profiler
+The `Utility AI` profiler module counts active brains and action switches per frame and times action
+selection, which is how a brain that re-selects every frame becomes visible.
+
+### Brain Map
+`Window/DTech/Utility AI/Brain Map` draws the selected config as a read-only graph: considerations feed
+their action, actions feed the score aggregator. With a live brain for that config the nodes also show
+their current score and the current action is highlighted.
+
+### Scoring Matrix
+`Window/DTech/Utility AI/Scoring Matrix` scores a config against a set of blackboard snapshots without
+entering play mode. Create a `UtilityScoringProbe` subclass that builds your context (and, if the
+actions need dependencies, an injector), then a `DTech/Utility AI/Scoring Scenario` asset holding the
+probe, the config and the cases. Every case is a `BlackboardAsset` plus the action expected to win.
+The result is a matrix of case against action, with the winner highlighted, mismatches in red and CSV
+export. `UtilityScoringMatrixRunner.Run` has no UI, so the same cases can be asserted from a test.
+
+The matrix evaluates `CalculateUtility` only: an action whose score depends on state built in `Enter`
+is not reproduced. For the same reason `CalculateUtility` must stay free of side effects - the debugger,
+the map and the matrix all call it outside of the brain tick.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
