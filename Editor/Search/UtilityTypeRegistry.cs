@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using UnityEditor;
 using UnityEngine;
 
@@ -88,19 +87,13 @@ namespace DTech.UtilityAI.Editor
 		
 		private static void LogSkippedTypes(Type baseType, List<Type> skippedTypes)
 		{
+			UtilityHiddenTypeReport.Report(baseType, skippedTypes);
 			if (skippedTypes.Count <= 0)
 			{
 				return;
 			}
-
-			var builder = new StringBuilder();
-			builder.AppendLine($"[UtilityAI] {skippedTypes.Count} type(s) derived from {baseType.Name} are hidden in the type picker because they are missing the [Serializable] attribute:");
-			for (int i = 0; i < skippedTypes.Count; i++)
-			{
-				builder.AppendLine(skippedTypes[i].FullName);
-			}
 			
-			Debug.LogWarning(builder.ToString());
+			Debug.LogWarning($"[UtilityAI] {skippedTypes.Count} type(s) derived from {baseType.Name} are hidden in the type picker because they are missing the [Serializable] attribute. Open {UtilityHiddenTypesWindow.MenuPath} to review and fix them.");
 		}
 	}
 }
