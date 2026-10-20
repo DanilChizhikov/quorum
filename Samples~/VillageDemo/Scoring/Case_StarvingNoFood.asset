@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93774c11846c4f16a50d10851c842a07, type: 3}
+  m_Name: Case_StarvingNoFood
+  m_EditorClassIdentifier: 
+  _variables:
+  - rid: 2636270898261786773
+  - rid: 2636270898261786774
+  - rid: 2636270898261786775
+  - rid: 2636270898261786776
+  references:
+    version: 2
+    RefIds:
+    - rid: 2636270898261786773
+      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: DTech.Blackboard, asm: com.dtech.blackboard}
+      data:
+        _guid:
+          _value0: 15070814193333526337
+          _value1: 4926418591634780754
+        _name: Hunger
+        _value: 0.9
+    - rid: 2636270898261786774
+      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: DTech.Blackboard, asm: com.dtech.blackboard}
+      data:
+        _guid:
+          _value0: 15206989144038410243
+          _value1: 17403488278319482340
+        _name: Energy
+        _value: 0.7
+    - rid: 2636270898261786775
+      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: DTech.Blackboard, asm: com.dtech.blackboard}
+      data:
+        _guid:
+          _value0: 13608173549974006825
+          _value1: 3807001812750235708
+        _name: ThreatDistance
+        _value: 99
+    - rid: 2636270898261786776
+      type: {class: 'BlackboardVariable`1[[System.Boolean, mscorlib]]', ns: DTech.Blackboard, asm: com.dtech.blackboard}
+      data:
+        _guid:
+          _value0: 4579937664790053722
+          _value1: 9417632540396725852
+        _name: FoodAvailable
+        _value: 0
