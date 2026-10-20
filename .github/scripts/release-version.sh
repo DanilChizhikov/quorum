@@ -1,7 +1,8 @@
 #!/bin/sh
 # Reads the release version from a release/X.Y.Z or hotfix/X.Y.Z branch and checks the pull request is ready to ship:
 # package.json carries that version and its changelogUrl points at the vX.Y.Z tag, CHANGELOG.md has its section,
-# the description (the release notes) is not empty and the tag does not exist yet. Writes `version` to $GITHUB_OUTPUT.
+# the description (the release notes) is not empty and the tag does not exist yet. Writes `version` and `package`
+# (the package name) to $GITHUB_OUTPUT.
 #
 # Input comes through the environment only: HEAD_REF (the PR branch) and PR_BODY (the PR description).
 set -e
@@ -28,6 +29,11 @@ if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
 fi
 
 PACKAGE_VERSION=$(read_package version) || fail "Could not read $PACKAGE."
+PACKAGE_NAME=$(read_package name) || fail "Could not read $PACKAGE."
+if [ -z "$PACKAGE_NAME" ]; then
+	fail "\"name\" in $PACKAGE is empty."
+fi
+
 if [ "$PACKAGE_VERSION" != "$VERSION" ]; then
 	fail "\"version\" in $PACKAGE is '$PACKAGE_VERSION'; bump it to $VERSION."
 fi
@@ -54,4 +60,5 @@ fi
 echo "Release v$VERSION is ready."
 if [ -n "$GITHUB_OUTPUT" ]; then
 	echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+	echo "package=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
 fi

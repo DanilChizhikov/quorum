@@ -5,7 +5,7 @@ A .unitypackage is a gzipped tar with one folder per asset, named by the asset's
 it: the GUIDs are taken from there, so a missing .meta, a .meta without an asset or a duplicate GUID fails the build.
 
 Usage: python3 build-unitypackage.py <package-root> <asset-path> <output>
-  e.g. python3 build-unitypackage.py . Assets/ActorFramework com.dtech.actor-framework.1.0.0.unitypackage
+  e.g. python3 build-unitypackage.py . Assets/AddressableManagement com.dtech.addressable-management.1.0.0.unitypackage
 """
 
 import gzip

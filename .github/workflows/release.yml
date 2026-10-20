@@ -36,10 +36,11 @@ jobs:
 
       - name: Check the package packs
         env:
+          PACKAGE: ${{ steps.version.outputs.package }}
           VERSION: ${{ steps.version.outputs.version }}
         run: >
-          python3 -I .github/scripts/build-unitypackage.py . Assets/ActorFramework
-          "$RUNNER_TEMP/com.dtech.actor-framework.$VERSION.unitypackage"
+          python3 -I .github/scripts/build-unitypackage.py . Assets/UtilityAI
+          "$RUNNER_TEMP/$PACKAGE.$VERSION.unitypackage"
 
   release:
     name: Pack and Release
@@ -64,16 +65,17 @@ jobs:
       - name: Pack unitypackage
         id: pack
         env:
+          PACKAGE: ${{ steps.version.outputs.package }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          file="$RUNNER_TEMP/com.dtech.actor-framework.$VERSION.unitypackage"
-          python3 -I .github/scripts/build-unitypackage.py . Assets/ActorFramework "$file"
+          file="$RUNNER_TEMP/$PACKAGE.$VERSION.unitypackage"
+          python3 -I .github/scripts/build-unitypackage.py . Assets/UtilityAI "$file"
           echo "file=$file" >> "$GITHUB_OUTPUT"
 
       - name: Upload unitypackage
         uses: actions/upload-artifact@v4
         with:
-          name: com.dtech.actor-framework.${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.package }}.${{ steps.version.outputs.version }}
           path: ${{ steps.pack.outputs.file }}
           if-no-files-found: error
 
