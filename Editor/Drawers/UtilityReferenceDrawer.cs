@@ -10,6 +10,11 @@ namespace DTech.UtilityAI.Editor
 		private const string NoneLabel = "None";
 		private const string ClearLabel = "Clear";
 		private const float ClearButtonWidth = 60f;
+		private const float RemapButtonWidth = 70f;
+		private const string RemapLabel = "Remap";
+		private const string RemapTooltip = "Pick the type this entry should become. Serialized field values are lost; use Window/DTech/Utility AI/Validator > Migrate Types for a lossless move.";
+		private const string CopyLabel = "Copy";
+		private const string PasteLabel = "Paste";
 		
 		protected abstract Type BaseType { get; }
 		protected abstract string Title { get; }
@@ -46,6 +51,11 @@ namespace DTech.UtilityAI.Editor
 			else
 			{
 				EditorGUI.LabelField(headerRect, label);
+			}
+			
+			if (isManagedReference)
+			{
+				HandleContextClick(headerRect, property);
 			}
 			
 			float offset = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
@@ -104,24 +114,13 @@ namespace DTech.UtilityAI.Editor
 			EditorGUI.indentLevel--;
 		}
 		
-		private static void DrawMissingType(Rect position, SerializedProperty property)
-		{
-			var messageRect = new Rect(position.x, position.y, position.width - ClearButtonWidth, EditorGUIUtility.singleLineHeight);
-			var buttonRect = new Rect(position.xMax - ClearButtonWidth, position.y, ClearButtonWidth, EditorGUIUtility.singleLineHeight);
-			Color previousColor = GUI.color;
-			GUI.color = Color.red;
-			EditorGUI.LabelField(messageRect, $"Missing type: {property.managedReferenceFullTypename}");
-			GUI.color = previousColor;
-			if (!GUI.Button(buttonRect, ClearLabel))
-			{
-				return;
-			}
-			
-			property.managedReferenceValue = null;
-			property.serializedObject.ApplyModifiedProperties();
-		}
 		
 		private static void AssignType(SerializedObject serializedObject, string propertyPath, Type type)
+		{
+			AssignValue(serializedObject, propertyPath, type != null ? Activator.CreateInstance(type) : null);
+		}
+		
+		private static void AssignValue(SerializedObject serializedObject, string propertyPath, object value)
 		{
 			if (serializedObject == null)
 			{
@@ -135,8 +134,72 @@ namespace DTech.UtilityAI.Editor
 				return;
 			}
 			
-			property.managedReferenceValue = type != null ? Activator.CreateInstance(type) : null;
+			property.managedReferenceValue = value;
 			serializedObject.ApplyModifiedProperties();
+		}
+		
+		private void DrawMissingType(Rect position, SerializedProperty property)
+		{
+			float buttonsWidth = RemapButtonWidth + ClearButtonWidth;
+			var messageRect = new Rect(position.x, position.y, position.width - buttonsWidth, EditorGUIUtility.singleLineHeight);
+			var remapRect = new Rect(position.xMax - buttonsWidth, position.y, RemapButtonWidth, EditorGUIUtility.singleLineHeight);
+			var clearRect = new Rect(position.xMax - ClearButtonWidth, position.y, ClearButtonWidth, EditorGUIUtility.singleLineHeight);
+			Color previousColor = GUI.color;
+			GUI.color = Color.red;
+			EditorGUI.LabelField(messageRect, $"Missing type: {property.managedReferenceFullTypename}");
+			GUI.color = previousColor;
+			if (GUI.Button(remapRect, new GUIContent(RemapLabel, RemapTooltip)))
+			{
+				OpenTypeSearch(remapRect, property);
+				return;
+			}
+
+			if (!GUI.Button(clearRect, ClearLabel))
+			{
+				return;
+			}
+
+			property.managedReferenceValue = null;
+			property.serializedObject.ApplyModifiedProperties();
+		}
+
+		private void HandleContextClick(Rect rect, SerializedProperty property)
+		{
+			Event current = Event.current;
+			if (current.type != EventType.ContextClick || !rect.Contains(current.mousePosition))
+			{
+				return;
+			}
+			
+			ShowContextMenu(property);
+			current.Use();
+		}
+		
+		private void ShowContextMenu(SerializedProperty property)
+		{
+			SerializedObject serializedObject = property.serializedObject;
+			string propertyPath = property.propertyPath;
+			object value = property.managedReferenceValue;
+			bool canPaste = UtilityManagedReferenceClipboard.CanPaste(BaseType);
+			var menu = new GenericMenu();
+			menu.AddEntry(new UtilityMenuItem(CopyLabel, value != null,
+				() => UtilityManagedReferenceClipboard.Copy(value)));
+			menu.AddEntry(new UtilityMenuItem(PasteLabel, canPaste,
+				() => Paste(serializedObject, propertyPath)));
+			menu.AddSeparator(string.Empty);
+			menu.AddEntry(new UtilityMenuItem(ClearLabel, value != null,
+				() => AssignValue(serializedObject, propertyPath, null)));
+			menu.ShowAsContext();
+		}
+		
+		private void Paste(SerializedObject serializedObject, string propertyPath)
+		{
+			if (!UtilityManagedReferenceClipboard.TryPaste(BaseType, out object value))
+			{
+				return;
+			}
+			
+			AssignValue(serializedObject, propertyPath, value);
 		}
 		
 		private void DrawTypeField(Rect position, SerializedProperty property)

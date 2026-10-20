@@ -38,13 +38,13 @@ namespace DTech.UtilityAI
 		{
 			PlayerLoopExtensions.ModifyPlayerLoop((ref PlayerLoopSystem system) =>
 			{
-				PlayerLoopSystem loopSystem = system.GetSystem<Update>();
+				ref PlayerLoopSystem loopSystem = ref system.GetSystem<Update>();
 				loopSystem.AddSystem(typeof(UtilityUpdateService), Update);
 			});
 			
 			PlayerLoopExtensions.ModifyPlayerLoop((ref PlayerLoopSystem system) =>
 			{
-				PlayerLoopSystem loopSystem = system.GetSystem<FixedUpdate>();
+				ref PlayerLoopSystem loopSystem = ref system.GetSystem<FixedUpdate>();
 				loopSystem.AddSystem(typeof(UtilityUpdateService), FixedUpdate);
 			});
 			
@@ -86,13 +86,13 @@ namespace DTech.UtilityAI
 		{
 			PlayerLoopExtensions.ModifyPlayerLoop((ref PlayerLoopSystem system) =>
 			{
-				PlayerLoopSystem loopSystem = system.GetSystem<Update>();
+				ref PlayerLoopSystem loopSystem = ref system.GetSystem<Update>();
 				loopSystem.RemoveSystem(typeof(UtilityUpdateService), false);
 			});
 			
 			PlayerLoopExtensions.ModifyPlayerLoop((ref PlayerLoopSystem system) =>
 			{
-				PlayerLoopSystem loopSystem = system.GetSystem<FixedUpdate>();
+				ref PlayerLoopSystem loopSystem = ref system.GetSystem<FixedUpdate>();
 				loopSystem.RemoveSystem(typeof(UtilityUpdateService), false);
 			});
 
@@ -100,6 +100,8 @@ namespace DTech.UtilityAI
 			{
 				_instance = null;
 			}
+
+			GC.SuppressFinalize(this);
 		}
 		
 		private void Update()

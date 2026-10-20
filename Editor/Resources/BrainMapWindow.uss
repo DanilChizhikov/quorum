@@ -1,0 +1,29 @@
+.uai-root {
+    flex-grow: 1;
+    background-color: var(--unity-colors-window-background);
+}
+
+.uai-map__config {
+    min-width: 260px;
+}
+
+.uai-map__status {
+    padding: 4px 8px;
+    white-space: normal;
+    color: var(--unity-colors-helpbox-text);
+}
+
+.uai-map__score {
+    padding: 2px 6px;
+    -unity-text-align: middle-right;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-map__score--error {
+    color: var(--unity-colors-error-text);
+}
+
+.uai-map__node--current {
+    border-left-width: 3px;
+    border-left-color: var(--unity-colors-highlight-background);
+}

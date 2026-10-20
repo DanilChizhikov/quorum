@@ -1,0 +1,51 @@
+.uai-root {
+    flex-grow: 1;
+    background-color: var(--unity-colors-window-background);
+}
+
+.uai-summary {
+    padding: 6px 8px;
+    -unity-font-style: bold;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-hint {
+    padding: 0 8px 6px 8px;
+    white-space: normal;
+    color: var(--unity-colors-helpbox-text);
+}
+
+.uai-list {
+    flex-grow: 1;
+}
+
+.uai-group {
+    padding: 6px 8px 2px 8px;
+    -unity-font-style: bold;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 3px 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--unity-colors-inspector_titlebar-border);
+}
+
+.uai-row__message {
+    flex-grow: 1;
+    white-space: normal;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-row__button {
+    min-width: 54px;
+    margin-left: 4px;
+}
+
+.uai-empty {
+    padding: 12px 8px;
+    white-space: normal;
+    color: var(--unity-colors-helpbox-text);
+}
