@@ -19,3 +19,4 @@
 - Live brain debugger, `Utility AI` profiler module and a read-only Brain Map graph; the `BrainConfig` inspector lists live brains in play mode.
 - `UtilityScoringProbe` and `UtilityScoringScenario`: score a config against `BlackboardAsset` snapshots from the Scoring Matrix window or from a test through `UtilityScoringMatrixRunner`.
 - Diagnostics hooks on `UtilityBrain` (live brain registry, switch log, profiler counters), compiled only under `UNITY_EDITOR || DEVELOPMENT_BUILD`.
+- `Village Demo` sample (`Samples~/VillageDemo`): two brain types, blackboard sensing, response-curve and gate considerations, a custom `IUtilityActionInjector`, `BrainUpdateType.Custom`, a `ScriptableUtilityAction` entry and a Scoring Matrix scenario.

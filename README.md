@@ -25,6 +25,7 @@ dependencies from any DI container - Zenject and VContainer adapters ship with t
     - [Profiler](#profiler)
     - [Brain Map](#brain-map)
     - [Scoring Matrix](#scoring-matrix)
+- [Samples](#samples)
 - [License](#license)
 
 ## Getting Started
@@ -206,6 +207,28 @@ export. `UtilityScoringMatrixRunner.Run` has no UI, so the same cases can be ass
 The matrix evaluates `CalculateUtility` only: an action whose score depends on state built in `Enter`
 is not reproduced. For the same reason `CalculateUtility` must stay free of side effects - the debugger,
 the map and the matrix all call it outside of the brain tick.
+
+## Samples
+
+### Village Demo
+Import it from **Package Manager > Utility AI > Samples > Village Demo**, then open
+`Scenes/VillageDemo.unity` and press Play. Villagers eat, sleep, chop wood and run from wolves;
+wolves patrol, hunt and rest. The sample's own `README.md` walks through every file.
+
+What it shows:
+- Sensors write into a per-agent `RuntimeBlackboard`; considerations only read it, so the
+  `Scoring Matrix` scenario in `Scoring/` reproduces every villager score without a scene.
+- Response curves (`BlackboardCurveConsideration`), gates (`BlackboardBoolConsideration`) and weights
+  combined with `CompositeUtilityConsideration`.
+- Interrupts: the villager re-scores every 0.5 s with `RequestSwitchAction()`; the wolf only switches
+  when its action completes or fails, and picks with `RandomUtilityScoreAggregator`.
+- `BrainUpdateType.Update` (villager) and `BrainUpdateType.Custom` (the wolf ticks its own brain).
+- A custom `IUtilityActionInjector` that hands the world service to the actions.
+- A `ScriptableUtilityAction` asset referenced through `ScriptableUtilityActionReference`.
+- Commitment (hysteresis): a running `VillageAction` keeps a minimum score, so two close actions do not flip on every re-score.
+
+Open `Window/DTech/Utility AI/Debugger` and `Window/DTech/Utility AI/Brain Map` in play mode to watch
+the scores live.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
