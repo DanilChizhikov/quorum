@@ -208,9 +208,9 @@ namespace DTech.UtilityAI
 			}
 		}
 
-		private void SetCurrentAction(IUtilityAction action)
+		private void SetCurrentAction(IUtilityAction action, bool restart = false)
 		{
-			if (action == _currentAction)
+			if (action == _currentAction && !restart)
 			{
 				return;
 			}
@@ -245,7 +245,9 @@ namespace DTech.UtilityAI
 			
 			int actionIndex = scoreAggregator.Aggregate(_actions, _context);
 			IUtilityAction action = actionIndex >= 0 && actionIndex < _actions.Length ? _actions[actionIndex] : null;
-			SetCurrentAction(action);
+			// A finished action that wins again must start over, otherwise it keeps returning its final state.
+			bool restart = action != null && action == _currentAction && _lastActionState != UtilityActionState.Running;
+			SetCurrentAction(action, restart);
 		}
 	}
 }

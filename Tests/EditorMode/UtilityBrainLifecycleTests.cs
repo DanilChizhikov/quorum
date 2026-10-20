@@ -61,6 +61,36 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		}
 		
 		[Test]
+		public void Update_CompletedActionWinsAgain_RestartsIt()
+		{
+			_config.SetActions(new UtilityAction[] { new TestUtilityAction(1f), new TestUtilityAction(0.5f) });
+			using var brain = new TestUtilityBrain(_config, _context);
+			var action = (TestUtilityAction)brain.Actions[0];
+			brain.Enable();
+			action.TickState = UtilityActionState.Completed;
+			
+			brain.Update();
+			
+			Assert.That(action.ExitCount, Is.EqualTo(1));
+			Assert.That(action.EnterCount, Is.EqualTo(2));
+		}
+		
+		[Test]
+		public void RequestSwitchAction_RunningActionWinsAgain_DoesNotRestartIt()
+		{
+			_config.SetActions(new UtilityAction[] { new TestUtilityAction(1f), new TestUtilityAction(0.5f) });
+			using var brain = new TestUtilityBrain(_config, _context);
+			var action = (TestUtilityAction)brain.Actions[0];
+			brain.Enable();
+			brain.Update();
+			
+			brain.RequestSwitchAction();
+			
+			Assert.That(action.ExitCount, Is.EqualTo(0));
+			Assert.That(action.EnterCount, Is.EqualTo(1));
+		}
+		
+		[Test]
 		public void Disable_ExitsCurrentActionAndClearsState()
 		{
 			_config.SetActions(new UtilityAction[] { new TestUtilityAction(1f) });
