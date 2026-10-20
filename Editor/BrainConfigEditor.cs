@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Globalization;
+using DTech.UtilityAI.Diagnostics;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,20 +14,28 @@ namespace DTech.UtilityAI.Editor
 		private const string ActionsPropertyName = "_actionEntries";
 		private const string ConsiderationPropertyName = "_consideration";
 		private const string ScoreAggregatorPropertyName = "_scoreAggregator";
-		private const string LegacyMessage = "This config still stores actions as ScriptableObject assets. Upgrade them to config entries to keep editing them.";
-		private const string UpgradeLabel = "Upgrade Legacy Actions";
-		private const string UpgradeUndoName = "Upgrade Utility AI Actions";
-		
+		private const string FixLabel = "Fix";
+		private const float FixButtonWidth = 60f;
+		private const string LiveTitle = "Live";
+		private const string OpenDebuggerLabel = "Open In Debugger";
+		private const string ScoreFormat = "0.000";
+		private const float DebuggerButtonWidth = 140f;
+
+		private readonly List<BrainConfigIssue> _issues = new();
+		private readonly List<IUtilityBrainDebugInfo> _brains = new();
+
 		private UtilityActionListDrawProvider _actionsDrawProvider;
 		private SerializedProperty _updateTypeProperty;
 		private SerializedProperty _switchActionTypeProperty;
 		private SerializedProperty _considerationProperty;
 		private SerializedProperty _scoreAggregatorProperty;
-		
+		private bool _issuesDirty = true;
+
 		public override void OnInspectorGUI()
 		{
 			serializedObject.Update();
-			DrawLegacyActionsUpgrade();
+			DrawIssues();
+			DrawLiveBrains();
 			using (new EditorGUI.DisabledScope(Application.isPlaying))
 			{
 				EditorGUILayout.PropertyField(_updateTypeProperty);
@@ -35,10 +46,42 @@ namespace DTech.UtilityAI.Editor
 				EditorGUILayout.PropertyField(_considerationProperty);
 				EditorGUILayout.PropertyField(_scoreAggregatorProperty);
 			}
-			
-			serializedObject.ApplyModifiedProperties();
+
+			if (serializedObject.ApplyModifiedProperties())
+			{
+				_issuesDirty = true;
+			}
 		}
-		
+
+		public override bool RequiresConstantRepaint() => Application.isPlaying;
+
+		private static MessageType GetMessageType(BrainConfigIssueSeverity severity) =>
+			severity switch
+			{
+				BrainConfigIssueSeverity.Error => MessageType.Error,
+				BrainConfigIssueSeverity.Warning => MessageType.Warning,
+				_ => MessageType.Info,
+			};
+
+		private static void DrawLiveBrain(IUtilityBrainDebugInfo brain, int index)
+		{
+			string state = brain.IsEnabled ? "Enabled" : "Disabled";
+			EditorGUILayout.LabelField(
+				$"#{index}",
+				$"{state}    current: {UtilityActionLabel.Get(brain.CurrentAction)} ({brain.CurrentState})");
+
+			IReadOnlyList<IUtilityAction> actions = brain.Actions;
+			using (new EditorGUI.IndentLevelScope())
+			{
+				for (int i = 0; i < actions.Count; i++)
+				{
+					float score = UtilityScoreSampler.Evaluate(actions[i], brain.Context, out string error);
+					string value = error ?? score.ToString(ScoreFormat, CultureInfo.InvariantCulture);
+					EditorGUILayout.LabelField(UtilityActionLabel.Get(actions[i]), value);
+				}
+			}
+		}
+
 		private void OnEnable()
 		{
 			_updateTypeProperty = serializedObject.FindProperty(UpdateTypePropertyName);
@@ -47,32 +90,111 @@ namespace DTech.UtilityAI.Editor
 			_scoreAggregatorProperty = serializedObject.FindProperty(ScoreAggregatorPropertyName);
 			SerializedProperty actionsProperty = serializedObject.FindProperty(ActionsPropertyName);
 			_actionsDrawProvider = new UtilityActionListDrawProvider(serializedObject, actionsProperty);
+			_issuesDirty = true;
+			Undo.undoRedoPerformed += OnUndoRedoPerformed;
 		}
-		
+
 		private void OnDisable()
 		{
+			Undo.undoRedoPerformed -= OnUndoRedoPerformed;
 			_actionsDrawProvider?.Dispose();
 			_actionsDrawProvider = null;
 		}
-		
-		private void DrawLegacyActionsUpgrade()
+
+		private void OnUndoRedoPerformed()
 		{
-			if (target is not BrainConfig config || !config.HasLegacyActions)
+			_issuesDirty = true;
+			Repaint();
+		}
+
+		private void DrawIssues()
+		{
+			if (target is not BrainConfig config)
 			{
 				return;
 			}
 
-			EditorGUILayout.HelpBox(LegacyMessage, MessageType.Warning);
-			if (!GUILayout.Button(UpgradeLabel))
+			if (_issuesDirty)
+			{
+				_issues.Clear();
+				BrainConfigValidator.Validate(config, _issues);
+				_issuesDirty = false;
+			}
+
+			for (int i = 0; i < _issues.Count; i++)
+			{
+				DrawIssue(_issues[i]);
+			}
+		}
+
+		private void DrawIssue(in BrainConfigIssue issue)
+		{
+			EditorGUILayout.HelpBox(issue.Message, GetMessageType(issue.Severity));
+			if (!BrainConfigIssueFixer.CanFix(issue.Code))
 			{
 				return;
 			}
 
-			Undo.RecordObject(config, UpgradeUndoName);
-			config.UpgradeLegacyActions();
-			EditorUtility.SetDirty(config);
-			AssetDatabase.SaveAssetIfDirty(config);
+			using (new EditorGUILayout.HorizontalScope())
+			{
+				GUILayout.FlexibleSpace();
+				if (!GUILayout.Button(FixLabel, GUILayout.Width(FixButtonWidth)))
+				{
+					return;
+				}
+			}
+
+			if (!BrainConfigIssueFixer.TryFix(issue))
+			{
+				return;
+			}
+
 			serializedObject.Update();
+			_issuesDirty = true;
+		}
+
+		private void DrawLiveBrains()
+		{
+			if (!Application.isPlaying || target is not BrainConfig config)
+			{
+				return;
+			}
+
+			UtilityBrainDebugRegistry.GetBrainsNonAlloc(_brains);
+			int shownCount = 0;
+			for (int i = 0; i < _brains.Count; i++)
+			{
+				IUtilityBrainDebugInfo brain = _brains[i];
+				if (brain.SourceConfig != config)
+				{
+					continue;
+				}
+
+				if (shownCount <= 0)
+				{
+					EditorGUILayout.Space();
+					EditorGUILayout.LabelField(LiveTitle, EditorStyles.boldLabel);
+				}
+
+				shownCount++;
+				DrawLiveBrain(brain, shownCount);
+			}
+
+			if (shownCount <= 0)
+			{
+				return;
+			}
+
+			using (new EditorGUILayout.HorizontalScope())
+			{
+				GUILayout.FlexibleSpace();
+				if (GUILayout.Button(OpenDebuggerLabel, GUILayout.Width(DebuggerButtonWidth)))
+				{
+					UtilityBrainDebuggerWindow.Open(config);
+				}
+			}
+
+			EditorGUILayout.Space();
 		}
 	}
 }
