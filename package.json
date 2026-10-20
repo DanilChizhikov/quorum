@@ -22,5 +22,12 @@
         "registry": "https://npm.pkg.github.com/@DanilChizhikov"
     },
     "license": "MIT",
-    "readme": "README.md"
+    "readme": "README.md",
+    "samples": [
+        {
+            "displayName": "Village Demo",
+            "description": "Villagers and wolves driven by two brains: blackboard sensing, response-curve considerations, composite scores, a custom injector, Custom update mode, a ScriptableObject action and a Scoring Matrix scenario.",
+            "path": "Samples~/VillageDemo"
+        }
+    ]
 }
