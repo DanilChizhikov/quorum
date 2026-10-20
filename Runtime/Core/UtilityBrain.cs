@@ -1,12 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using DTech.UtilityAI.Diagnostics;
+#endif
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace DTech.UtilityAI
 {
 	public abstract class UtilityBrain<TConfig, TContext> : IUtilityBrain
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+		, IUtilityBrainDebugInfo
+#endif
 		where TConfig : BrainConfig
 		where TContext : IUtilityContext
 	{
@@ -16,6 +22,10 @@ namespace DTech.UtilityAI
 		private readonly TContext _context;
 		private readonly IBrainUpdateProvider _updateProvider;
 		private readonly IUtilityAction[] _actions;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+		private readonly TConfig _sourceConfig;
+		private readonly UtilityBrainSwitchLog _switchLog = new();
+#endif
 		
 		public bool IsEnabled { get; private set; }
 		public BrainUpdateType UpdateType { get; }
@@ -23,6 +33,18 @@ namespace DTech.UtilityAI
 		
 		protected TConfig Config { get; }
 		protected TContext Context => _context;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+		BrainConfig IUtilityBrainDebugInfo.SourceConfig => _sourceConfig;
+		string IUtilityBrainDebugInfo.ConfigName => _sourceConfig != null ? _sourceConfig.name : string.Empty;
+		BrainUpdateType IUtilityBrainDebugInfo.UpdateType => UpdateType;
+		SwitchActionType IUtilityBrainDebugInfo.SwitchActionType => Config != null ? Config.SwitchActionType : default;
+		bool IUtilityBrainDebugInfo.IsEnabled => IsEnabled;
+		IUtilityContext IUtilityBrainDebugInfo.Context => _context;
+		IReadOnlyList<IUtilityAction> IUtilityBrainDebugInfo.Actions => _actions;
+		IUtilityAction IUtilityBrainDebugInfo.CurrentAction => _hasCurrentAction ? _currentAction : null;
+		UtilityActionState IUtilityBrainDebugInfo.CurrentState => _lastActionState;
+		IReadOnlyList<UtilityBrainSwitchRecord> IUtilityBrainDebugInfo.SwitchLog => _switchLog;
+#endif
 		
 		private bool _isDisposed;
 		private IUtilityAction _currentAction;
@@ -33,11 +55,17 @@ namespace DTech.UtilityAI
 
 		public UtilityBrain(TConfig config, TContext context, IUtilityActionInjector injector = null)
 		{
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+			_sourceConfig = config;
+#endif
 			_context = context;
 			Config = (TConfig)config.CreateRuntimeInstance();
 			UpdateType = Config.UpdateType;
 			_updateProvider = UpdateUtility.GetProvider(UpdateType);
 			_actions = CreateActions(Config, context, injector ?? new NullUtilityActionInjector());
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+			UtilityBrainDebugRegistry.Register(this);
+#endif
 		}
 		
 		public void Enable()
@@ -52,6 +80,9 @@ namespace DTech.UtilityAI
 			_lastActionState = UtilityActionState.Running;
 			_updateProvider.AddUpdate(Update);
 			IsEnabled = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+			UtilityProfilerCounters.BrainEnabled();
+#endif
 			RequestSwitchAction();
 		}
 
@@ -144,6 +175,9 @@ namespace DTech.UtilityAI
 			_updateProvider.RemoveUpdate(Update);
 			SetCurrentAction(null);
 			IsEnabled = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+			UtilityProfilerCounters.BrainDisabled();
+#endif
 		}
 		
 		public void Dispose()
@@ -164,6 +198,9 @@ namespace DTech.UtilityAI
 			}
 			
 			DestroyRuntimeConfig(Config);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+			UtilityBrainDebugRegistry.Unregister(this);
+#endif
 		}
 
 		private static IUtilityAction[] CreateActions(BrainConfig config, IUtilityContext context, IUtilityActionInjector injector)
@@ -214,6 +251,10 @@ namespace DTech.UtilityAI
 			{
 				return;
 			}
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+			
+			IUtilityAction previousAction = _hasCurrentAction ? _currentAction : null;
+#endif
 			
 			if (_hasCurrentAction)
 			{
@@ -227,6 +268,10 @@ namespace DTech.UtilityAI
 			{
 				_currentAction.Enter(_context);
 			}
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+			
+			RecordSwitch(previousAction, _currentAction);
+#endif
 			
 			OnActionChanged?.Invoke();
 		}
@@ -243,11 +288,46 @@ namespace DTech.UtilityAI
 				return;
 			}
 			
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+			int actionIndex;
+			using (UtilityProfilerCounters.SelectActionMarker.Auto())
+			{
+				actionIndex = scoreAggregator.Aggregate(_actions, _context);
+			}
+#else
 			int actionIndex = scoreAggregator.Aggregate(_actions, _context);
+#endif
 			IUtilityAction action = actionIndex >= 0 && actionIndex < _actions.Length ? _actions[actionIndex] : null;
 			// A finished action that wins again must start over, otherwise it keeps returning its final state.
 			bool restart = action != null && action == _currentAction && _lastActionState != UtilityActionState.Running;
 			SetCurrentAction(action, restart);
 		}
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+		
+		private void RecordSwitch(IUtilityAction fromAction, IUtilityAction toAction)
+		{
+			float score = float.NaN;
+			if (toAction != null)
+			{
+				try
+				{
+					score = toAction.CalculateUtility(_context);
+				}
+				catch (Exception exception)
+				{
+					Debug.LogException(exception);
+				}
+			}
+			
+			var record = new UtilityBrainSwitchRecord(
+				Time.realtimeSinceStartupAsDouble,
+				Array.IndexOf(_actions, fromAction),
+				Array.IndexOf(_actions, toAction),
+				score);
+			
+			_switchLog.Add(record);
+			UtilityProfilerCounters.ActionSwitched();
+		}
+#endif
 	}
 }
