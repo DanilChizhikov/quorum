@@ -2,6 +2,7 @@ using System;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace DTech.UtilityAI.Editor
 {
@@ -115,19 +116,19 @@ namespace DTech.UtilityAI.Editor
 		}
 		
 		
-		private static void AssignType(SerializedObject serializedObject, string propertyPath, Type type)
+		private static void AssignType(Object targetObject, string propertyPath, Type type)
 		{
-			AssignValue(serializedObject, propertyPath, type != null ? Activator.CreateInstance(type) : null);
+			AssignValue(targetObject, propertyPath, type != null ? Activator.CreateInstance(type) : null);
 		}
 		
-		private static void AssignValue(SerializedObject serializedObject, string propertyPath, object value)
+		private static void AssignValue(Object targetObject, string propertyPath, object value)
 		{
-			if (serializedObject == null)
+			if (targetObject == null)
 			{
 				return;
 			}
 			
-			serializedObject.Update();
+			using var serializedObject = new SerializedObject(targetObject);
 			SerializedProperty property = serializedObject.FindProperty(propertyPath);
 			if (property == null)
 			{
@@ -177,7 +178,7 @@ namespace DTech.UtilityAI.Editor
 		
 		private void ShowContextMenu(SerializedProperty property)
 		{
-			SerializedObject serializedObject = property.serializedObject;
+			Object targetObject = property.serializedObject.targetObject;
 			string propertyPath = property.propertyPath;
 			object value = property.managedReferenceValue;
 			bool canPaste = UtilityManagedReferenceClipboard.CanPaste(BaseType);
@@ -185,21 +186,21 @@ namespace DTech.UtilityAI.Editor
 			menu.AddEntry(new UtilityMenuItem(CopyLabel, value != null,
 				() => UtilityManagedReferenceClipboard.Copy(value)));
 			menu.AddEntry(new UtilityMenuItem(PasteLabel, canPaste,
-				() => Paste(serializedObject, propertyPath)));
+				() => Paste(targetObject, propertyPath)));
 			menu.AddSeparator(string.Empty);
 			menu.AddEntry(new UtilityMenuItem(ClearLabel, value != null,
-				() => AssignValue(serializedObject, propertyPath, null)));
+				() => AssignValue(targetObject, propertyPath, null)));
 			menu.ShowAsContext();
 		}
 		
-		private void Paste(SerializedObject serializedObject, string propertyPath)
+		private void Paste(Object targetObject, string propertyPath)
 		{
 			if (!UtilityManagedReferenceClipboard.TryPaste(BaseType, out object value))
 			{
 				return;
 			}
 			
-			AssignValue(serializedObject, propertyPath, value);
+			AssignValue(targetObject, propertyPath, value);
 		}
 		
 		private void DrawTypeField(Rect position, SerializedProperty property)
@@ -216,12 +217,12 @@ namespace DTech.UtilityAI.Editor
 		
 		private void OpenTypeSearch(Rect position, SerializedProperty property)
 		{
-			SerializedObject serializedObject = property.serializedObject;
+			Object targetObject = property.serializedObject.targetObject;
 			string propertyPath = property.propertyPath;
 			UtilityTypeSearchProvider provider = UtilityTypeSearchProvider.Create(
 				Title,
 				UtilityTypeRegistry.GetOptions(BaseType),
-				type => AssignType(serializedObject, propertyPath, type));
+				type => AssignType(targetObject, propertyPath, type));
 			
 			var searchContext = new SearchWindowContext(GUIUtility.GUIToScreenPoint(new Vector2(position.x, position.yMax)));
 			SearchWindow.Open(searchContext, provider);

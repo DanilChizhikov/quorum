@@ -68,6 +68,7 @@ namespace DTech.UtilityAI.Diagnostics
 			}
 
 			buffer.Clear();
+			int enabledCount = 0;
 			for (int i = 0; i < _brains.Count; i++)
 			{
 				WeakReference<IUtilityBrainDebugInfo> reference = _brains[i];
@@ -83,9 +84,15 @@ namespace DTech.UtilityAI.Diagnostics
 					continue;
 				}
 
+				if (brain.IsEnabled)
+				{
+					enabledCount++;
+				}
+
 				buffer.Add(brain);
 			}
 
+			UtilityProfilerCounters.SetActiveBrains(enabledCount);
 			return buffer.Count;
 		}
 
@@ -93,6 +100,7 @@ namespace DTech.UtilityAI.Diagnostics
 		{
 			_brains.Clear();
 			_freeTokens.Clear();
+			UtilityProfilerCounters.SetActiveBrains(0);
 		}
 
 #if UNITY_EDITOR

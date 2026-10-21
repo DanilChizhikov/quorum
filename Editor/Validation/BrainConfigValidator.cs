@@ -31,6 +31,8 @@ namespace DTech.UtilityAI.Editor
 			ValidateActions(config, issues);
 			ValidateManagedTypes(config, issues);
 			ValidateGraph(config, issues);
+			ValidateSharedAssetFormulas(config, issues);
+			ValidateContextTypes(config, issues);
 		}
 
 		private static void ValidateScoreAggregator(BrainConfig config, List<BrainConfigIssue> issues)
@@ -112,7 +114,8 @@ namespace DTech.UtilityAI.Editor
 
 		private static void ValidateScoreSource(BrainConfig config, List<BrainConfigIssue> issues, UtilityAction action, int index)
 		{
-			if (GetConsideration(action) != null || HasCustomUtility(action.GetType()))
+			object scoreSource = action is ScriptableUtilityActionReference reference ? reference.Action : action;
+			if (scoreSource == null || GetConsideration(scoreSource) != null || HasCustomUtility(scoreSource.GetType()))
 			{
 				return;
 			}
@@ -121,7 +124,7 @@ namespace DTech.UtilityAI.Editor
 				config,
 				BrainConfigIssueSeverity.Warning,
 				BrainConfigIssueCode.ActionWithoutScoreSource,
-				$"Action {index} ({GetActionName(action)}) has no consideration and no own CalculateUtility: its score is always 0.",
+				$"Action {index} ({GetScoreSourceName(scoreSource)}) has no consideration and no own CalculateUtility: its score is always 0.",
 				ActionsPropertyPath));
 		}
 
@@ -291,10 +294,186 @@ namespace DTech.UtilityAI.Editor
 				ConsiderationPropertyPath));
 		}
 
-		private static UtilityConsideration GetConsideration(UtilityAction action)
+		private static void ValidateSharedAssetFormulas(BrainConfig config, List<BrainConfigIssue> issues)
 		{
-			FieldInfo field = UtilitySerializableFieldCache.GetField(action.GetType(), ConsiderationFieldName);
-			return field?.GetValue(action) as UtilityConsideration;
+			IReadOnlyList<UtilityAction> actions = config.Actions;
+			if (actions == null)
+			{
+				return;
+			}
+
+			for (int i = 0; i < actions.Count; i++)
+			{
+				if (actions[i] is not ScriptableUtilityActionReference reference || reference.Action == null)
+				{
+					continue;
+				}
+
+				if (!ContainsFormula(reference.Action, new HashSet<object>()))
+				{
+					continue;
+				}
+
+				issues.Add(new BrainConfigIssue(
+					config,
+					BrainConfigIssueSeverity.Error,
+					BrainConfigIssueCode.FormulaOnSharedAsset,
+					$"Action {i} ({reference.Action.name}) keeps a formula on a shared asset: " +
+					"nothing on the asset gets Initialize, so the formula never binds and always scores 0. " +
+					"Move the formula to a per-brain action.",
+					ActionsPropertyPath));
+			}
+		}
+
+		private static bool ContainsFormula(object node, HashSet<object> visited)
+		{
+			if (node == null || !visited.Add(node))
+			{
+				return false;
+			}
+
+			if (node is FormulaUtilityConsideration)
+			{
+				return true;
+			}
+
+			IReadOnlyList<FieldInfo> fields = UtilitySerializableFieldCache.GetFields(node.GetType());
+			for (int i = 0; i < fields.Count; i++)
+			{
+				FieldInfo field = fields[i];
+				if (!UtilitySerializableFieldCache.IsManagedReference(field))
+				{
+					continue;
+				}
+
+				object value = field.GetValue(node);
+				if (value == null)
+				{
+					continue;
+				}
+
+				if (!UtilitySerializableFieldCache.IsCollection(field.FieldType))
+				{
+					if (ContainsFormula(value, visited))
+					{
+						return true;
+					}
+
+					continue;
+				}
+
+				if (value is not IList list)
+				{
+					continue;
+				}
+
+				for (int elementIndex = 0; elementIndex < list.Count; elementIndex++)
+				{
+					if (ContainsFormula(list[elementIndex], visited))
+					{
+						return true;
+					}
+				}
+			}
+
+			return false;
+		}
+
+		private static void ValidateContextTypes(BrainConfig config, List<BrainConfigIssue> issues)
+		{
+			IReadOnlyList<UtilityAction> actions = config.Actions;
+			if (actions == null || actions.Count <= 1)
+			{
+				return;
+			}
+
+			var contextTypes = new Dictionary<Type, int>();
+			for (int i = 0; i < actions.Count; i++)
+			{
+				UtilityAction action = actions[i];
+				Type contextType = action != null ? GetContextType(action) : null;
+				if (contextType == null || contextTypes.ContainsKey(contextType))
+				{
+					continue;
+				}
+
+				contextTypes.Add(contextType, i);
+			}
+
+			if (contextTypes.Count <= 1 || HasCommonContext(contextTypes.Keys))
+			{
+				return;
+			}
+
+			var names = new List<string>(contextTypes.Count);
+			foreach (KeyValuePair<Type, int> pair in contextTypes)
+			{
+				names.Add($"{pair.Key.Name} (action {pair.Value})");
+			}
+
+			issues.Add(new BrainConfigIssue(
+				config,
+				BrainConfigIssueSeverity.Error,
+				BrainConfigIssueCode.ContextTypeMismatch,
+				$"Actions expect different contexts: {string.Join(", ", names)}. " +
+				"Only the actions matching the brain context run; the rest fail and score 0.",
+				ActionsPropertyPath));
+		}
+
+		private static bool HasCommonContext(Dictionary<Type, int>.KeyCollection contextTypes)
+		{
+			foreach (Type candidate in contextTypes)
+			{
+				bool isCommon = true;
+				foreach (Type contextType in contextTypes)
+				{
+					if (contextType.IsAssignableFrom(candidate))
+					{
+						continue;
+					}
+
+					isCommon = false;
+					break;
+				}
+
+				if (isCommon)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		private static Type GetContextType(UtilityAction action)
+		{
+			if (action is not ScriptableUtilityActionReference reference)
+			{
+				return GetContextArgument(action.GetType(), typeof(UtilityAction<,>));
+			}
+
+			return reference.Action != null
+				? GetContextArgument(reference.Action.GetType(), typeof(ScriptableUtilityAction<,>))
+				: null;
+		}
+
+		private static Type GetContextArgument(Type type, Type definition)
+		{
+			for (Type current = type; current != null; current = current.BaseType)
+			{
+				if (current.IsGenericType && current.GetGenericTypeDefinition() == definition)
+				{
+					return current.GetGenericArguments()[1];
+				}
+			}
+
+			return null;
+		}
+
+		private static UtilityConsideration GetConsideration(object scoreSource)
+		{
+			FieldInfo field = UtilitySerializableFieldCache.GetField(scoreSource.GetType(), ConsiderationFieldName);
+			return field?.GetValue(scoreSource) as UtilityConsideration;
 		}
 
 		private static bool HasCustomUtility(Type type)
@@ -323,15 +502,26 @@ namespace DTech.UtilityAI.Editor
 
 		private static bool IsFrameworkActionType(Type type)
 		{
-			if (type == typeof(UtilityAction))
+			if (type == typeof(UtilityAction) || type == typeof(ScriptableUtilityAction))
 			{
 				return true;
 			}
 
-			return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(UtilityAction<,>);
+			if (!type.IsGenericType)
+			{
+				return false;
+			}
+
+			Type definition = type.GetGenericTypeDefinition();
+			return definition == typeof(UtilityAction<,>) || definition == typeof(ScriptableUtilityAction<,>);
 		}
 
 		private static string GetActionName(UtilityAction action) =>
 			UtilityTypeRegistry.GetDisplayName(action.GetType());
+
+		private static string GetScoreSourceName(object scoreSource) =>
+			scoreSource is ScriptableUtilityAction asset
+				? asset.name
+				: UtilityTypeRegistry.GetDisplayName(scoreSource.GetType());
 	}
 }

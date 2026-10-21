@@ -1,9 +1,11 @@
 using System;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace DTech.UtilityAI
 {
 	[Serializable]
+	[Preserve]
 	public abstract class UtilityAction : IUtilityAction
 	{
 		[SerializeReference]
@@ -29,7 +31,6 @@ namespace DTech.UtilityAI
 		/// duplicated and references to shared assets stay shared. Override it when a reference
 		/// field holds per-agent state that two brains must not share.
 		/// </summary>
-		/// <returns>Copy of this action for one brain.</returns>
 		public virtual UtilityAction Clone()
 		{
 			var clone = (UtilityAction)MemberwiseClone();
@@ -47,13 +48,18 @@ namespace DTech.UtilityAI
 		public abstract void Exit(IUtilityContext context);
 	}
 
+	[Preserve]
 	public abstract class UtilityAction<TAgent, TContext> : UtilityAction
 		where TAgent : IUtilityAgent
 		where TContext : UtilityContext<TAgent>
 	{
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
+		private bool _loggedContextMismatch;
+#endif
+
 		public override void Initialize(IUtilityContext context)
 		{
-			if (context is not TContext genericContext)
+			if (!TryGetContext(context, out TContext genericContext))
 			{
 				return;
 			}
@@ -63,7 +69,7 @@ namespace DTech.UtilityAI
 
 		public override void Enter(IUtilityContext context)
 		{
-			if (context is not TContext genericContext)
+			if (!TryGetContext(context, out TContext genericContext))
 			{
 				return;
 			}
@@ -73,7 +79,7 @@ namespace DTech.UtilityAI
 
 		public override UtilityActionState Tick(IUtilityContext context)
 		{
-			if (context is not TContext genericContext)
+			if (!TryGetContext(context, out TContext genericContext))
 			{
 				return UtilityActionState.Failed;
 			}
@@ -83,7 +89,7 @@ namespace DTech.UtilityAI
 
 		public override float CalculateUtility(IUtilityContext context)
 		{
-			if (context is not TContext genericContext)
+			if (!TryGetContext(context, out TContext genericContext))
 			{
 				return 0f;
 			}
@@ -93,7 +99,7 @@ namespace DTech.UtilityAI
 
 		public override void Exit(IUtilityContext context)
 		{
-			if (context is not TContext genericContext)
+			if (!TryGetContext(context, out TContext genericContext))
 			{
 				return;
 			}
@@ -111,5 +117,27 @@ namespace DTech.UtilityAI
 			Consideration != null ? Consideration.Evaluate(context) : 0f;
 
 		protected abstract void Exit(TContext context);
+
+		private bool TryGetContext(IUtilityContext context, out TContext genericContext)
+		{
+			if (context is TContext typedContext)
+			{
+				genericContext = typedContext;
+				return true;
+			}
+
+			genericContext = null;
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
+			if (!_loggedContextMismatch)
+			{
+				_loggedContextMismatch = true;
+				Debug.LogError(
+					$"[{GetType().Name}] expects context {typeof(TContext).Name} but got " +
+					$"{(context == null ? "null" : context.GetType().Name)}: the action does nothing and scores 0.");
+			}
+#endif
+
+			return false;
+		}
 	}
 }

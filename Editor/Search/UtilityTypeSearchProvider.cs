@@ -10,17 +10,26 @@ namespace DTech.UtilityAI.Editor
 	{
 		private const string NoneEntryName = "None";
 		
+		private static UtilityTypeSearchProvider _provider;
+		
 		private string _title;
 		private IReadOnlyList<UtilityTypeOption> _options;
 		private Action<Type> _onTypeSelected;
+		private int _generation;
 		
 		public static UtilityTypeSearchProvider Create(string title, IReadOnlyList<UtilityTypeOption> options, Action<Type> onTypeSelected)
 		{
-			var provider = CreateInstance<UtilityTypeSearchProvider>();
-			provider._title = title;
-			provider._options = options;
-			provider._onTypeSelected = onTypeSelected;
-			return provider;
+			if (_provider == null)
+			{
+				_provider = CreateInstance<UtilityTypeSearchProvider>();
+				_provider.hideFlags = HideFlags.HideAndDontSave;
+			}
+			
+			_provider._title = title;
+			_provider._options = options;
+			_provider._onTypeSelected = onTypeSelected;
+			_provider._generation++;
+			return _provider;
 		}
 		
 		private static GUIContent GetEntryContent(UtilityTypeOption option)
@@ -32,13 +41,14 @@ namespace DTech.UtilityAI.Editor
 		
 		List<SearchTreeEntry> ISearchWindowProvider.CreateSearchTree(SearchWindowContext context)
 		{
+			int generation = _generation;
 			var tree = new List<SearchTreeEntry>
 			{
 				new SearchTreeGroupEntry(new GUIContent(_title), 0),
 				new SearchTreeEntry(new GUIContent(NoneEntryName))
 				{
 					level = 1,
-					userData = null,
+					userData = new Entry(generation, null),
 				},
 			};
 			
@@ -62,7 +72,7 @@ namespace DTech.UtilityAI.Editor
 						tree.Add(new SearchTreeEntry(GetEntryContent(option))
 						{
 							level = level,
-							userData = option,
+							userData = new Entry(generation, option),
 						});
 						
 						continue;
@@ -80,9 +90,34 @@ namespace DTech.UtilityAI.Editor
 		
 		bool ISearchWindowProvider.OnSelectEntry(SearchTreeEntry searchTreeEntry, SearchWindowContext context)
 		{
-			var option = searchTreeEntry.userData as UtilityTypeOption;
-			_onTypeSelected?.Invoke(option?.Type);
+			if (searchTreeEntry.userData is not Entry entry || entry.Generation != _generation)
+			{
+				return true;
+			}
+			
+			Action<Type> onTypeSelected = _onTypeSelected;
+			_options = null;
+			_onTypeSelected = null;
+			onTypeSelected?.Invoke(entry.Option?.Type);
 			return true;
+		}
+		
+		private void OnDisable()
+		{
+			_options = null;
+			_onTypeSelected = null;
+		}
+		
+		private readonly struct Entry
+		{
+			public int Generation { get; }
+			public UtilityTypeOption Option { get; }
+			
+			public Entry(int generation, UtilityTypeOption option)
+			{
+				Generation = generation;
+				Option = option;
+			}
 		}
 	}
 }

@@ -267,7 +267,7 @@ namespace DTech.UtilityAI
 					}
 					default:
 					{
-						throw new ArgumentOutOfRangeException(nameof(instruction), instruction.Code, null);
+						throw new ArgumentOutOfRangeException(nameof(instruction), instruction.Code, "Unknown formula op code.");
 					}
 				}
 			}

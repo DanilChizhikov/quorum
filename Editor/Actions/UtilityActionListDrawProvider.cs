@@ -122,7 +122,7 @@ namespace DTech.UtilityAI.Editor
 		}
 
 		private UtilityManagedReferenceListTarget GetTarget() =>
-			new(_list.serializedProperty.serializedObject, _list.serializedProperty.propertyPath);
+			new(_list.serializedProperty.serializedObject.targetObject, _list.serializedProperty.propertyPath);
 
 		private void ShowElementMenu(int index)
 		{

@@ -36,6 +36,7 @@ namespace DTech.UtilityAI
 		protected TConfig Config { get; }
 		protected TContext Context => _context;
 #if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
+		int IUtilityBrainDebugInfo.DebugToken => _debugToken;
 		BrainConfig IUtilityBrainDebugInfo.SourceConfig => Config;
 		string IUtilityBrainDebugInfo.ConfigName => Config != null ? Config.name : string.Empty;
 		BrainUpdateType IUtilityBrainDebugInfo.UpdateType => UpdateType;
@@ -57,6 +58,16 @@ namespace DTech.UtilityAI
 
 		public UtilityBrain(TConfig config, TContext context, IUtilityActionInjector injector = null)
 		{
+			if (config == null)
+			{
+				throw new ArgumentNullException(nameof(config));
+			}
+
+			if (context == null)
+			{
+				throw new ArgumentNullException(nameof(context));
+			}
+
 			_context = context;
 			_cachedUpdate = Update;
 			Config = config;
@@ -72,7 +83,7 @@ namespace DTech.UtilityAI
 		
 		public void Enable()
 		{
-			if (IsEnabled)
+			if (_isDisposed || IsEnabled)
 			{
 				return;
 			}
@@ -90,26 +101,38 @@ namespace DTech.UtilityAI
 
 		public void RequestSwitchAction(float delay = 0f, CancellationToken token = default)
 		{
-			if (!IsEnabled || _isRequestingSwitchAction)
+			if (_isDisposed || !IsEnabled)
 			{
 				return;
 			}
 
-			_isRequestingSwitchAction = true;
 			if (delay > 0f)
 			{
-				_request ??= new BrainSwitchStateRequest(OnRequestSwitchActionCompleted);
+				if (_isRequestingSwitchAction)
+				{
+					return;
+				}
+
+				_isRequestingSwitchAction = true;
+				_request ??= new BrainSwitchStateRequest(OnRequestSwitchActionCompleted, OnRequestSwitchActionCancelled);
 				_request.Arm(delay, token);
+				return;
 			}
-			else
-			{
-				OnRequestSwitchActionCompleted();
-			}
+			
+			_request?.Cancel();
+			_isRequestingSwitchAction = true;
+			OnRequestSwitchActionCompleted();
 		}
 
 		public void Update()
 		{
-			if (!IsEnabled || !_hasCurrentAction)
+			if (!IsEnabled)
+			{
+				return;
+			}
+
+			_request?.Tick();
+			if (!_hasCurrentAction)
 			{
 				return;
 			}
@@ -121,7 +144,7 @@ namespace DTech.UtilityAI
 				OnActionStateChange?.Invoke(actionState);
 			}
 			
-			if (_switchActionType == SwitchActionType.Manual)
+			if (_switchActionType == SwitchActionType.OnActionFinished)
 			{
 				switch (actionState)
 				{
@@ -191,6 +214,8 @@ namespace DTech.UtilityAI
 			
 			_isDisposed = true;
 			Disable();
+			OnActionChanged = null;
+			OnActionStateChange = null;
 			for (int i = 0; i < _actions.Length; i++)
 			{
 				if (_actions[i] is IDisposable disposableAction)
@@ -262,6 +287,11 @@ namespace DTech.UtilityAI
 			OnActionChanged?.Invoke();
 		}
 		
+		private void OnRequestSwitchActionCancelled()
+		{
+			_isRequestingSwitchAction = false;
+		}
+
 		private void OnRequestSwitchActionCompleted()
 		{
 			_request?.Cancel();
@@ -283,7 +313,6 @@ namespace DTech.UtilityAI
 			int actionIndex = scoreAggregator.Aggregate(_actions, _context);
 #endif
 			IUtilityAction action = actionIndex >= 0 && actionIndex < _actions.Length ? _actions[actionIndex] : null;
-			// A finished action that wins again must start over, otherwise it keeps returning its final state.
 			bool restart = action != null && action == _currentAction && _lastActionState != UtilityActionState.Running;
 			SetCurrentAction(action, restart);
 		}

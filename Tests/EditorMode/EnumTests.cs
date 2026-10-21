@@ -14,13 +14,13 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void UtilityActionState_Completed_HasCorrectValue()
 		{
-			Assert.That((int)UtilityActionState.Completed, Is.EqualTo(2));
+			Assert.That((int)UtilityActionState.Completed, Is.EqualTo(1));
 		}
 		
 		[Test]
 		public void UtilityActionState_Failed_HasCorrectValue()
 		{
-			Assert.That((int)UtilityActionState.Failed, Is.EqualTo(3));
+			Assert.That((int)UtilityActionState.Failed, Is.EqualTo(2));
 		}
 		
 		[Test]
@@ -42,9 +42,9 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		}
 		
 		[Test]
-		public void SwitchActionType_Manual_HasCorrectValue()
+		public void SwitchActionType_OnActionFinished_HasCorrectValue()
 		{
-			Assert.That((byte)SwitchActionType.Manual, Is.EqualTo(0));
+			Assert.That((byte)SwitchActionType.OnActionFinished, Is.EqualTo(0));
 		}
 		
 		[Test]
@@ -65,10 +65,10 @@ namespace DTech.UtilityAI.Tests.EditorMode
 					result = 0;
 					break;
 				case UtilityActionState.Completed:
-					result = 2;
+					result = 1;
 					break;
 				case UtilityActionState.Failed:
-					result = 3;
+					result = 2;
 					break;
 			}
 			

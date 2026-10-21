@@ -18,6 +18,7 @@ dependencies from any DI container - Zenject and VContainer adapters ship with t
 - [Usage](#usage)
     - [Considerations](#considerations)
     - [Formula consideration](#formula-consideration)
+- [Managed stripping](#managed-stripping)
 - [Editor Tools](#editor-tools)
     - [Config editing](#config-editing)
     - [Validator](#validator)
@@ -184,11 +185,14 @@ identifier, wrap it in braces: `{Max Hunger}`.
 
 The formula is compiled once and every variable is resolved to its `BlackboardVariable<T>` once, in
 `Initialize`, exactly as [Considerations](#considerations) asks. `Evaluate` then only reads the cached
-handles and walks the compiled program, so it allocates nothing. A consideration that never got
-`Initialize` - one on a `ScriptableUtilityAction` asset, or one the editor tools score off-tick -
-compiles and resolves on its first `Evaluate` instead. Either way it recompiles and re-resolves
-whenever the expression or the `RuntimeBlackboard` it was given changes, so tuning a formula in the
-inspector takes effect while the game is running.
+handles and walks the compiled program, so it allocates nothing and never re-resolves. `Initialize`
+recompiles and rebinds whenever the expression or the `RuntimeBlackboard` changed, so tuning a formula
+in the inspector takes effect while the game is running.
+
+A formula that never got `Initialize` scores `0`: binding on the fly would cost a lookup per name per
+evaluation, and on a shared asset it would bind to whichever agent evaluated last. A formula therefore
+belongs on a per-brain action, never on a `ScriptableUtilityAction` asset - the validator reports that
+one as an error.
 
 A name the blackboard has no variable for makes the whole formula score 0 rather than quietly reading
 as zero, because a typo that produces a plausible number is worse than one that produces none. At
@@ -306,7 +310,11 @@ The config asset itself is never copied. In its constructor the brain clones eve
 `Clone()` - a shallow field copy plus a copy of the consideration tree - then injects the clone and
 calls `Initialize` on it, so two brains built from one config never share mutable state and the asset
 stays untouched. `Enable` starts the selection, `Disable` exits the current action and stops the
-updates, and `RequestSwitchAction(delay)` asks for a new selection.
+updates, and `RequestSwitchAction(delay)` asks for a new selection. A delay is counted down by the
+brain's own update, so it fires in the phase the brain runs in and a `BrainUpdateType.Custom` brain
+counts it down when your code ticks it. A `RequestSwitchAction()` without a delay supersedes a
+pending delayed one, and cancelling the token of a pending request cancels the switch instead of
+firing it. `Enable` and `RequestSwitchAction` do nothing once the brain is disposed.
 
 `Clone()` is `virtual` on `UtilityAction`, `UtilityConsideration` and `UtilityScoreAggregator`, and
 the default covers config data: value fields are duplicated, references to shared assets stay
@@ -337,6 +345,20 @@ package manager (`com.svermeulen.extenject`, `com.modesttree.zenject`, `jp.hadas
 the define is applied automatically. When Zenject is installed as plain files under `Assets/Plugins`,
 add `UTILITYAI_ZENJECT_ENABLED` to Scripting Define Symbols manually (same for
 `UTILITYAI_VCONTAINER_ENABLED`).
+
+## Managed stripping
+Actions, considerations and aggregators are created from `[SerializeReference]` data and get their
+dependencies through reflection, so nothing in compiled code references those types. On
+`Managed Stripping Level = High` that makes them candidates for removal.
+
+The package covers its own: `Runtime/link.xml` keeps `com.dtech.utilityai` whole, and the base types
+(`UtilityAction`, `ScriptableUtilityAction`, `UtilityConsideration`, `UtilityScoreAggregator` and the
+built-in implementations) also carry `[Preserve]`, which is what a build that compiles the package
+from sources goes by.
+
+**Your own** actions, considerations and aggregators are not covered: mark them with
+`[UnityEngine.Scripting.Preserve]`, or keep their assembly in a `link.xml` of your own, and verify
+with an IL2CPP build at `High` before shipping.
 
 ## Editor Tools
 

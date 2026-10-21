@@ -108,6 +108,38 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			Assert.That(results.Count, Is.GreaterThan(1));
 		}
 		
+		[Test]
+		public void Aggregate_ZeroWeightAction_IsNeverPicked()
+		{
+			var zeroWeightAction = new MockUtilityAction(0f);
+			var weightedAction = new MockUtilityAction(1f);
+			var actions = new List<IUtilityAction> { zeroWeightAction, weightedAction };
+			
+			for (int i = 0; i < 200; i++)
+			{
+				Random.InitState(i);
+				
+				Assert.That(_aggregator.Aggregate(actions, _context), Is.EqualTo(1));
+			}
+		}
+		
+		[Test]
+		public void Aggregate_ManySmallWeights_NeverReturnsNegativeOne()
+		{
+			var actions = new List<IUtilityAction>();
+			for (int i = 0; i < 64; i++)
+			{
+				actions.Add(new MockUtilityAction(0.01f));
+			}
+			
+			for (int i = 0; i < 200; i++)
+			{
+				Random.InitState(i);
+				
+				Assert.That(_aggregator.Aggregate(actions, _context), Is.GreaterThanOrEqualTo(0));
+			}
+		}
+		
 		private class MockUtilityContext : IUtilityContext
 		{
 			public IUtilityAgent BaseAgent => null;

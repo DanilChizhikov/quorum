@@ -1,27 +1,38 @@
+using System;
 using UnityEditor;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace DTech.UtilityAI.Editor
 {
 	internal readonly struct UtilityManagedReferenceListTarget
 	{
-		public SerializedObject SerializedObject { get; }
+		public Object TargetObject { get; }
 		public string PropertyPath { get; }
 
-		public UtilityManagedReferenceListTarget(SerializedObject serializedObject, string propertyPath)
+		public UtilityManagedReferenceListTarget(Object targetObject, string propertyPath)
 		{
-			SerializedObject = serializedObject;
+			TargetObject = targetObject;
 			PropertyPath = propertyPath;
 		}
 
-		public SerializedProperty FindListProperty()
+		public bool TryEdit(Action<SerializedProperty> edit)
 		{
-			if (SerializedObject == null || string.IsNullOrEmpty(PropertyPath))
+			if (TargetObject == null || string.IsNullOrEmpty(PropertyPath) || edit == null)
 			{
-				return null;
+				return false;
 			}
 
-			SerializedObject.Update();
-			return SerializedObject.FindProperty(PropertyPath);
+			using var serializedObject = new SerializedObject(TargetObject);
+			SerializedProperty listProperty = serializedObject.FindProperty(PropertyPath);
+			if (listProperty == null)
+			{
+				return false;
+			}
+
+			edit.Invoke(listProperty);
+			serializedObject.ApplyModifiedProperties();
+			return true;
 		}
 	}
 }

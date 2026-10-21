@@ -1,6 +1,7 @@
 using System;
 using DTech.Blackboard;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace DTech.UtilityAI
 {
@@ -8,11 +9,12 @@ namespace DTech.UtilityAI
 	/// Weight computed from a math formula typed in the inspector. Identifiers in the formula are
 	/// blackboard variable names, so a designer can shape a score without writing a consideration.
 	/// The formula is compiled once and its variables are resolved once per agent, in Initialize.
-	/// The score is 0 when the formula does not compile, when a variable is not on the blackboard, or
-	/// when the result is not finite.
+	/// The score is 0 when Initialize never ran, when the formula does not compile, when a variable is
+	/// not on the blackboard, or when the result is not finite.
 	/// </summary>
 	[Serializable]
 	[UtilityMenu("Formula")]
+	[Preserve]
 	public sealed class FormulaUtilityConsideration : UtilityConsideration
 	{
 		private const string DefaultExpression = "1";
@@ -29,7 +31,7 @@ namespace DTech.UtilityAI
 
 		public FormulaUtilityConsideration(string expression)
 		{
-			_expression = expression;
+			_expression = string.IsNullOrEmpty(expression) ? DefaultExpression : expression;
 		}
 
 		public override void Initialize(IUtilityContext context)
@@ -46,13 +48,7 @@ namespace DTech.UtilityAI
 
 		public override float Evaluate(IUtilityContext context)
 		{
-			RuntimeBlackboard blackboard = context?.Blackboard;
-			if (_evaluator == null || !_evaluator.IsCurrent(_expression, blackboard))
-			{
-				Bind(blackboard);
-			}
-
-			return _evaluator.Evaluate(Fallback);
+			return _evaluator?.Evaluate(Fallback) ?? Fallback;
 		}
 
 		private void Bind(RuntimeBlackboard blackboard)

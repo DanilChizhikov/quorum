@@ -14,5 +14,7 @@ namespace DTech.UtilityAI.Editor
 		ActionWithoutScoreSource = 9,
 		InvalidFormula = 10,
 		UnknownFormulaVariable = 11,
+		FormulaOnSharedAsset = 12,
+		ContextTypeMismatch = 13,
 	}
 }

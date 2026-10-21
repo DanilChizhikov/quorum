@@ -1,0 +1,3 @@
+<linker>
+	<assembly fullname="com.dtech.utilityai" preserve="all"/>
+</linker>

@@ -87,10 +87,11 @@ namespace DTech.UtilityAI.Editor
 				? scoringCase.Blackboard.ToRuntimeBlackboard()
 				: new RuntimeBlackboard();
 
+			List<IUtilityAction> actions = null;
 			try
 			{
 				IUtilityContext context = runContext.Probe.CreateContext(blackboard);
-				List<IUtilityAction> actions = PrepareActions(runContext.Config, context, runContext.Probe.CreateInjector());
+				actions = PrepareActions(runContext.Config, context, runContext.Probe.CreateInjector());
 				for (int i = 0; i < actions.Count && i < count; i++)
 				{
 					scores[i] = UtilityScoreSampler.Evaluate(actions[i], context, out string error);
@@ -98,7 +99,6 @@ namespace DTech.UtilityAI.Editor
 				}
 
 				winnerIndex = Aggregate(runContext.Config.ScoreAggregator, actions, context);
-				DisposeActions(actions);
 			}
 			catch (Exception exception)
 			{
@@ -106,6 +106,11 @@ namespace DTech.UtilityAI.Editor
 			}
 			finally
 			{
+				if (actions != null)
+				{
+					DisposeActions(actions);
+				}
+
 				blackboard.Dispose();
 			}
 

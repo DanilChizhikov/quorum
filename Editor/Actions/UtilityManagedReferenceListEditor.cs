@@ -9,28 +9,30 @@ namespace DTech.UtilityAI.Editor
 	{
 		public static object GetValue(in UtilityManagedReferenceListTarget target, int index)
 		{
-			SerializedProperty listProperty = target.FindListProperty();
-			if (listProperty == null || index < 0 || index >= listProperty.arraySize)
+			object value = null;
+			target.TryEdit(listProperty =>
 			{
-				return null;
-			}
+				if (index < 0 || index >= listProperty.arraySize)
+				{
+					return;
+				}
 
-			return listProperty.GetArrayElementAtIndex(index).managedReferenceValue;
+				value = listProperty.GetArrayElementAtIndex(index).managedReferenceValue;
+			});
+
+			return value;
 		}
 
 		public static List<object> GetValues(in UtilityManagedReferenceListTarget target)
 		{
 			var values = new List<object>();
-			SerializedProperty listProperty = target.FindListProperty();
-			if (listProperty == null)
+			target.TryEdit(listProperty =>
 			{
-				return values;
-			}
-
-			for (int i = 0; i < listProperty.arraySize; i++)
-			{
-				values.Add(listProperty.GetArrayElementAtIndex(i).managedReferenceValue);
-			}
+				for (int i = 0; i < listProperty.arraySize; i++)
+				{
+					values.Add(listProperty.GetArrayElementAtIndex(i).managedReferenceValue);
+				}
+			});
 
 			return values;
 		}
@@ -52,24 +54,20 @@ namespace DTech.UtilityAI.Editor
 				return;
 			}
 
-			SerializedProperty listProperty = target.FindListProperty();
-			if (listProperty == null)
+			target.TryEdit(listProperty =>
 			{
-				return;
-			}
+				int insertIndex = Mathf.Clamp(index, 0, listProperty.arraySize);
+				if (insertIndex >= listProperty.arraySize)
+				{
+					listProperty.arraySize++;
+				}
+				else
+				{
+					listProperty.InsertArrayElementAtIndex(insertIndex);
+				}
 
-			int insertIndex = Mathf.Clamp(index, 0, listProperty.arraySize);
-			if (insertIndex >= listProperty.arraySize)
-			{
-				listProperty.arraySize++;
-			}
-			else
-			{
-				listProperty.InsertArrayElementAtIndex(insertIndex);
-			}
-
-			listProperty.GetArrayElementAtIndex(insertIndex).managedReferenceValue = value;
-			target.SerializedObject.ApplyModifiedProperties();
+				listProperty.GetArrayElementAtIndex(insertIndex).managedReferenceValue = value;
+			});
 		}
 
 		public static void InsertValues(in UtilityManagedReferenceListTarget target, int index, IReadOnlyList<object> values)
@@ -87,14 +85,15 @@ namespace DTech.UtilityAI.Editor
 
 		public static void SetValue(in UtilityManagedReferenceListTarget target, int index, object value)
 		{
-			SerializedProperty listProperty = target.FindListProperty();
-			if (listProperty == null || index < 0 || index >= listProperty.arraySize)
+			target.TryEdit(listProperty =>
 			{
-				return;
-			}
+				if (index < 0 || index >= listProperty.arraySize)
+				{
+					return;
+				}
 
-			listProperty.GetArrayElementAtIndex(index).managedReferenceValue = value;
-			target.SerializedObject.ApplyModifiedProperties();
+				listProperty.GetArrayElementAtIndex(index).managedReferenceValue = value;
+			});
 		}
 
 		public static void Duplicate(in UtilityManagedReferenceListTarget target, int index)
@@ -105,39 +104,34 @@ namespace DTech.UtilityAI.Editor
 
 		public static void Move(in UtilityManagedReferenceListTarget target, int index, int targetIndex)
 		{
-			SerializedProperty listProperty = target.FindListProperty();
-			if (listProperty == null || index < 0 || index >= listProperty.arraySize)
+			target.TryEdit(listProperty =>
 			{
-				return;
-			}
+				if (index < 0 || index >= listProperty.arraySize)
+				{
+					return;
+				}
 
-			listProperty.MoveArrayElement(index, Mathf.Clamp(targetIndex, 0, listProperty.arraySize - 1));
-			target.SerializedObject.ApplyModifiedProperties();
+				listProperty.MoveArrayElement(index, Mathf.Clamp(targetIndex, 0, listProperty.arraySize - 1));
+			});
 		}
 
 		public static void Remove(in UtilityManagedReferenceListTarget target, int index)
 		{
-			SerializedProperty listProperty = target.FindListProperty();
-			if (listProperty == null || index < 0 || index >= listProperty.arraySize)
+			target.TryEdit(listProperty =>
 			{
-				return;
-			}
+				if (index < 0 || index >= listProperty.arraySize)
+				{
+					return;
+				}
 
-			listProperty.GetArrayElementAtIndex(index).managedReferenceValue = null;
-			listProperty.DeleteArrayElementAtIndex(index);
-			target.SerializedObject.ApplyModifiedProperties();
+				listProperty.GetArrayElementAtIndex(index).managedReferenceValue = null;
+				listProperty.DeleteArrayElementAtIndex(index);
+			});
 		}
 
 		public static void Clear(in UtilityManagedReferenceListTarget target)
 		{
-			SerializedProperty listProperty = target.FindListProperty();
-			if (listProperty == null)
-			{
-				return;
-			}
-
-			listProperty.ClearArray();
-			target.SerializedObject.ApplyModifiedProperties();
+			target.TryEdit(listProperty => listProperty.ClearArray());
 		}
 	}
 }

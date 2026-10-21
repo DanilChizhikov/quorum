@@ -45,7 +45,8 @@ namespace DTech.UtilityAI.Editor
 				return;
 			}
 
-			File.WriteAllText(path, Build(matrix));
+			// With a BOM so Excel reads non-ASCII labels instead of mojibake.
+			File.WriteAllText(path, Build(matrix), new UTF8Encoding(true));
 		}
 
 		private static void AppendRow(StringBuilder builder, UtilityScoringRow row, int columnCount)
@@ -72,7 +73,12 @@ namespace DTech.UtilityAI.Editor
 				return string.Empty;
 			}
 
-			if (!value.Contains(Separator) && !value.Contains("\""))
+			// Error columns carry exception messages, which can be multi-line: an unquoted line break
+			// would split one row into two.
+			if (!value.Contains(Separator) &&
+				!value.Contains("\"") &&
+				!value.Contains('\n') &&
+				!value.Contains('\r'))
 			{
 				return value;
 			}

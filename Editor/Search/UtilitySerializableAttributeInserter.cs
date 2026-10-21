@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 
@@ -34,6 +35,7 @@ namespace DTech.UtilityAI.Editor
 				return false;
 			}
 
+			bool hasByteOrderMark = HasByteOrderMark(path);
 			string text = File.ReadAllText(path);
 			string newLine = text.Contains("\r\n") ? "\r\n" : "\n";
 			var lines = new List<string>(text.Split(new[] { newLine }, StringSplitOptions.None));
@@ -71,7 +73,8 @@ namespace DTech.UtilityAI.Editor
 				lines.Insert(GetUsingInsertIndex(lines), SystemUsingLine);
 			}
 
-			File.WriteAllText(path, string.Join(newLine, lines));
+			// Keep the encoding the file came with: dropping its BOM shows up as a whole-file diff.
+			File.WriteAllText(path, string.Join(newLine, lines), new UTF8Encoding(hasByteOrderMark));
 			AssetDatabase.ImportAsset(path);
 			return true;
 		}
@@ -94,6 +97,13 @@ namespace DTech.UtilityAI.Editor
 
 		private static bool HasAttribute(List<string> lines, int declarationIndex)
 		{
+			// The attribute can sit on the declaration line itself, as in
+			// [Serializable] public sealed class Foo: a second one there is CS0579, not a duplicate warning.
+			if (lines[declarationIndex].Contains("Serializable"))
+			{
+				return true;
+			}
+
 			for (int i = declarationIndex - 1; i >= 0; i--)
 			{
 				string line = lines[i].Trim();
@@ -130,6 +140,16 @@ namespace DTech.UtilityAI.Editor
 			}
 
 			return false;
+		}
+
+		private static bool HasByteOrderMark(string path)
+		{
+			using FileStream stream = File.OpenRead(path);
+			var mark = new byte[3];
+			return stream.Read(mark, 0, mark.Length) == mark.Length &&
+					mark[0] == 0xEF &&
+					mark[1] == 0xBB &&
+					mark[2] == 0xBF;
 		}
 
 		private static int GetUsingInsertIndex(List<string> lines)

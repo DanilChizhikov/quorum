@@ -32,6 +32,11 @@ namespace DTech.UtilityAI.Diagnostics
 			_activeBrains.Value--;
 		}
 
+		public static void SetActiveBrains(int count)
+		{
+			_activeBrains.Value = count;
+		}
+
 		public static void ActionSwitched()
 		{
 			_switches.Value++;

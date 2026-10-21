@@ -10,15 +10,24 @@ namespace DTech.UtilityAI.Editor
 	{
 		private const string Title = "Blackboard Variables";
 
+		private static UtilityFormulaNameSearchProvider _provider;
+
 		private BlackboardAsset _schema;
 		private Action<string> _onNameSelected;
+		private int _generation;
 
 		public static UtilityFormulaNameSearchProvider Create(BlackboardAsset schema, Action<string> onNameSelected)
 		{
-			var provider = CreateInstance<UtilityFormulaNameSearchProvider>();
-			provider._schema = schema;
-			provider._onNameSelected = onNameSelected;
-			return provider;
+			if (_provider == null)
+			{
+				_provider = CreateInstance<UtilityFormulaNameSearchProvider>();
+				_provider.hideFlags = HideFlags.HideAndDontSave;
+			}
+
+			_provider._schema = schema;
+			_provider._onNameSelected = onNameSelected;
+			_provider._generation++;
+			return _provider;
 		}
 
 		List<SearchTreeEntry> ISearchWindowProvider.CreateSearchTree(SearchWindowContext context)
@@ -29,6 +38,7 @@ namespace DTech.UtilityAI.Editor
 				return tree;
 			}
 
+			int generation = _generation;
 			IReadOnlyList<BlackboardVariable> variables = _schema.Variables;
 			for (int i = 0; i < variables.Count; i++)
 			{
@@ -41,7 +51,7 @@ namespace DTech.UtilityAI.Editor
 				tree.Add(new SearchTreeEntry(new GUIContent(variable.Name))
 				{
 					level = 1,
-					userData = variable.Name,
+					userData = new Entry(generation, variable.Name),
 				});
 			}
 
@@ -50,8 +60,34 @@ namespace DTech.UtilityAI.Editor
 
 		bool ISearchWindowProvider.OnSelectEntry(SearchTreeEntry searchTreeEntry, SearchWindowContext context)
 		{
-			_onNameSelected?.Invoke(searchTreeEntry.userData as string);
+			if (searchTreeEntry.userData is not Entry entry || entry.Generation != _generation)
+			{
+				return true;
+			}
+
+			Action<string> onNameSelected = _onNameSelected;
+			_schema = null;
+			_onNameSelected = null;
+			onNameSelected?.Invoke(entry.Name);
 			return true;
+		}
+
+		private void OnDisable()
+		{
+			_schema = null;
+			_onNameSelected = null;
+		}
+
+		private readonly struct Entry
+		{
+			public int Generation { get; }
+			public string Name { get; }
+
+			public Entry(int generation, string name)
+			{
+				Generation = generation;
+				Name = name;
+			}
 		}
 	}
 }

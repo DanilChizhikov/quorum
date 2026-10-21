@@ -1,10 +1,12 @@
 using System;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace DTech.UtilityAI
 {
 	[Serializable]
 	[UtilityMenu("Composite")]
+	[Preserve]
 	public sealed class CompositeUtilityConsideration : UtilityConsideration
 	{
 		[SerializeField]
@@ -90,7 +92,7 @@ namespace DTech.UtilityAI
 				ConsiderationCombineMode.Max => Mathf.Max(result, score),
 				ConsiderationCombineMode.Average => result + score,
 				ConsiderationCombineMode.Sum => result + score,
-				_ => throw new ArgumentOutOfRangeException(nameof(_combineMode), _combineMode, null)
+				_ => throw new ArgumentOutOfRangeException(nameof(_combineMode), _combineMode, "Unknown consideration combine mode.")
 			};
 	}
 }

@@ -23,6 +23,7 @@ namespace DTech.UtilityAI.Editor
 
 		private readonly List<BrainConfigIssue> _issues = new();
 		private readonly List<IUtilityBrainDebugInfo> _brains = new();
+		private readonly Dictionary<int, UtilityScoreSampler> _samplers = new();
 
 		private UtilityActionListDrawProvider _actionsDrawProvider;
 		private SerializedProperty _updateTypeProperty;
@@ -64,23 +65,37 @@ namespace DTech.UtilityAI.Editor
 				_ => MessageType.Info,
 			};
 
-		private static void DrawLiveBrain(IUtilityBrainDebugInfo brain, int index)
+		private void DrawLiveBrain(IUtilityBrainDebugInfo brain, int index)
 		{
 			string state = brain.IsEnabled ? "Enabled" : "Disabled";
 			EditorGUILayout.LabelField(
 				$"#{index}",
 				$"{state}    current: {UtilityActionLabel.Get(brain.CurrentAction)} ({brain.CurrentState})");
 
+			UtilityScoreSampler sampler = GetSampler(brain.DebugToken);
+			sampler.Sample(brain, false);
 			IReadOnlyList<IUtilityAction> actions = brain.Actions;
 			using (new EditorGUI.IndentLevelScope())
 			{
 				for (int i = 0; i < actions.Count; i++)
 				{
-					float score = UtilityScoreSampler.Evaluate(actions[i], brain.Context, out string error);
-					string value = error ?? score.ToString(ScoreFormat, CultureInfo.InvariantCulture);
+					string error = sampler.GetError(i);
+					string value = error ?? sampler.GetScore(i).ToString(ScoreFormat, CultureInfo.InvariantCulture);
 					EditorGUILayout.LabelField(UtilityActionLabel.Get(actions[i]), value);
 				}
 			}
+		}
+
+		private UtilityScoreSampler GetSampler(int token)
+		{
+			if (_samplers.TryGetValue(token, out UtilityScoreSampler sampler))
+			{
+				return sampler;
+			}
+
+			sampler = new UtilityScoreSampler();
+			_samplers.Add(token, sampler);
+			return sampler;
 		}
 
 		private void OnEnable()
@@ -100,6 +115,8 @@ namespace DTech.UtilityAI.Editor
 		{
 			UtilityBrainDebugRegistry.RemoveObserver();
 			Undo.undoRedoPerformed -= OnUndoRedoPerformed;
+			_samplers.Clear();
+			_brains.Clear();
 			_actionsDrawProvider?.Dispose();
 			_actionsDrawProvider = null;
 		}

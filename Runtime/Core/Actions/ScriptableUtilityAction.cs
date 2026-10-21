@@ -1,7 +1,9 @@
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace DTech.UtilityAI
 {
+	[Preserve]
 	public abstract class ScriptableUtilityAction : ScriptableObject, IUtilityAction
 	{
 		[SerializeReference]
@@ -26,13 +28,18 @@ namespace DTech.UtilityAI
 		public abstract void Exit(IUtilityContext context);
 	}
 	
+	[Preserve]
 	public abstract class ScriptableUtilityAction<TAgent, TContext> : ScriptableUtilityAction
 		where TAgent : IUtilityAgent
 		where TContext : UtilityContext<TAgent>
 	{
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
+		private bool _loggedContextMismatch;
+#endif
+		
 		public override void Initialize(IUtilityContext context)
 		{
-			if (context is not TContext genericContext)
+			if (!TryGetContext(context, out TContext genericContext))
 			{
 				return;
 			}
@@ -42,7 +49,7 @@ namespace DTech.UtilityAI
 		
 		public override void Enter(IUtilityContext context)
 		{
-			if (context is not TContext genericContext)
+			if (!TryGetContext(context, out TContext genericContext))
 			{
 				return;
 			}
@@ -52,7 +59,7 @@ namespace DTech.UtilityAI
 
 		public override UtilityActionState Tick(IUtilityContext context)
 		{
-			if (context is not TContext genericContext)
+			if (!TryGetContext(context, out TContext genericContext))
 			{
 				return UtilityActionState.Failed;
 			}
@@ -62,7 +69,7 @@ namespace DTech.UtilityAI
 
 		public override float CalculateUtility(IUtilityContext context)
 		{
-			if (context is not TContext genericContext)
+			if (!TryGetContext(context, out TContext genericContext))
 			{
 				return 0f;
 			}
@@ -72,7 +79,7 @@ namespace DTech.UtilityAI
 
 		public override void Exit(IUtilityContext context)
 		{
-			if (context is not TContext genericContext)
+			if (!TryGetContext(context, out TContext genericContext))
 			{
 				return;
 			}
@@ -85,5 +92,28 @@ namespace DTech.UtilityAI
 		protected abstract UtilityActionState OnTick(TContext context);
 		protected abstract float CalculateUtility(TContext context);
 		protected abstract void Exit(TContext context);
+
+		private bool TryGetContext(IUtilityContext context, out TContext genericContext)
+		{
+			if (context is TContext typedContext)
+			{
+				genericContext = typedContext;
+				return true;
+			}
+
+			genericContext = null;
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
+			if (!_loggedContextMismatch)
+			{
+				_loggedContextMismatch = true;
+				Debug.LogError(
+					$"[{name}] expects context {typeof(TContext).Name} but got " +
+					$"{(context == null ? "null" : context.GetType().Name)}: the action does nothing and scores 0.",
+					this);
+			}
+#endif
+
+			return false;
+		}
 	}
 }
