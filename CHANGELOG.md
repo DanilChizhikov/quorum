@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.0]
+## [1.0.0] - 2026-10-21
 ### Added
 - `QuorumAction`: plain C# action base stored in `BrainConfig` with `[SerializeReference]`, plus the typed `QuorumAction<TAgent, TContext>` variant.
 - `ScriptableQuorumActionReference`: config entry that routes a brain to an existing `ScriptableQuorumAction` asset.
