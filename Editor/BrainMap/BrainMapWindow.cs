@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DTech.UtilityAI.Diagnostics;
 using UnityEditor;
@@ -27,7 +28,9 @@ namespace DTech.UtilityAI.Editor
 		private ObjectField _configField;
 		private Label _status;
 		private BrainConfig _builtConfig;
-		private IUtilityBrainDebugInfo _builtBrain;
+		// Weak, like the registry itself: an open window must not keep a brain, and through it an agent
+		// and its context, alive for as long as it stays open.
+		private WeakReference<IUtilityBrainDebugInfo> _builtBrain;
 		private int _builtActionCount;
 
 		[MenuItem(MenuPath)]
@@ -135,16 +138,28 @@ namespace DTech.UtilityAI.Editor
 			UtilityBrainDebugRegistry.GetBrainsNonAlloc(_brains);
 			IUtilityBrainDebugInfo brain = FindBrain(_brains, config);
 			CollectActions(config, brain);
-			if (config != _builtConfig || !ReferenceEquals(brain, _builtBrain) || _actions.Count != _builtActionCount)
+			if (config != _builtConfig || !IsBuiltBrain(brain) || _actions.Count != _builtActionCount)
 			{
 				_builtConfig = config;
-				_builtBrain = brain;
+				_builtBrain = brain != null ? new WeakReference<IUtilityBrainDebugInfo>(brain) : null;
 				_builtActionCount = _actions.Count;
 				_graphView.Build(_actions, config != null ? config.ScoreAggregator : null);
 			}
 
 			_status.text = config == null ? EmptyMessage : brain != null ? LiveMessage : StaticMessage;
 			_graphView.UpdateScores(brain?.Context, brain?.CurrentAction);
+		}
+
+		private bool IsBuiltBrain(IUtilityBrainDebugInfo brain)
+		{
+			if (_builtBrain == null)
+			{
+				return brain == null;
+			}
+
+			return _builtBrain.TryGetTarget(out IUtilityBrainDebugInfo builtBrain)
+				? ReferenceEquals(builtBrain, brain)
+				: brain == null;
 		}
 
 		private void CollectActions(BrainConfig config, IUtilityBrainDebugInfo brain)

@@ -14,7 +14,7 @@ namespace DTech.UtilityAI
 				BrainUpdateType.Update => _updateProvider,
 				BrainUpdateType.FixedUpdate => _fixedUpdateProvider,
 				BrainUpdateType.Custom => _nullProvider,
-				_ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+				_ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown brain update type.")
 			};
 	}
 }

@@ -31,6 +31,8 @@ namespace DTech.UtilityAI.Editor
 			ValidateActions(config, issues);
 			ValidateManagedTypes(config, issues);
 			ValidateGraph(config, issues);
+			ValidateSharedAssetFormulas(config, issues);
+			ValidateContextTypes(config, issues);
 		}
 
 		private static void ValidateScoreAggregator(BrainConfig config, List<BrainConfigIssue> issues)
@@ -289,6 +291,170 @@ namespace DTech.UtilityAI.Editor
 				BrainConfigIssueCode.CompositeWithSingleChild,
 				"Composite consideration wraps a single child and can be replaced by it.",
 				ConsiderationPropertyPath));
+		}
+
+		/// <summary>
+		/// A consideration on a ScriptableUtilityAction asset never gets Initialize: the asset is shared
+		/// by every brain, so a formula there re-resolves its variables on every evaluation of every agent.
+		/// </summary>
+		private static void ValidateSharedAssetFormulas(BrainConfig config, List<BrainConfigIssue> issues)
+		{
+			IReadOnlyList<UtilityAction> actions = config.Actions;
+			if (actions == null)
+			{
+				return;
+			}
+
+			for (int i = 0; i < actions.Count; i++)
+			{
+				if (actions[i] is not ScriptableUtilityActionReference reference || reference.Action == null)
+				{
+					continue;
+				}
+
+				FieldInfo field = UtilitySerializableFieldCache.GetField(reference.Action.GetType(), ConsiderationFieldName);
+				if (field?.GetValue(reference.Action) is not UtilityConsideration consideration)
+				{
+					continue;
+				}
+
+				if (!ContainsFormula(consideration, new HashSet<object>()))
+				{
+					continue;
+				}
+
+				issues.Add(new BrainConfigIssue(
+					config,
+					BrainConfigIssueSeverity.Warning,
+					BrainConfigIssueCode.FormulaOnSharedAsset,
+					$"Action {i} ({reference.Action.name}) keeps a formula consideration on a shared asset: " +
+					"it rebinds on every evaluation of every brain. Move the formula to a per-brain action.",
+					ActionsPropertyPath));
+			}
+		}
+
+		private static bool ContainsFormula(object node, HashSet<object> visited)
+		{
+			if (node == null || !visited.Add(node))
+			{
+				return false;
+			}
+
+			if (node is FormulaUtilityConsideration)
+			{
+				return true;
+			}
+
+			IReadOnlyList<FieldInfo> fields = UtilitySerializableFieldCache.GetFields(node.GetType());
+			for (int i = 0; i < fields.Count; i++)
+			{
+				FieldInfo field = fields[i];
+				if (!UtilitySerializableFieldCache.IsManagedReference(field))
+				{
+					continue;
+				}
+
+				object value = field.GetValue(node);
+				if (value == null)
+				{
+					continue;
+				}
+
+				if (!UtilitySerializableFieldCache.IsCollection(field.FieldType))
+				{
+					if (ContainsFormula(value, visited))
+					{
+						return true;
+					}
+
+					continue;
+				}
+
+				if (value is not IList list)
+				{
+					continue;
+				}
+
+				for (int elementIndex = 0; elementIndex < list.Count; elementIndex++)
+				{
+					if (ContainsFormula(list[elementIndex], visited))
+					{
+						return true;
+					}
+				}
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		/// Every action of one brain gets the same context instance, so two actions written for two
+		/// different contexts cannot both run: the mismatched one silently fails and scores 0.
+		/// </summary>
+		private static void ValidateContextTypes(BrainConfig config, List<BrainConfigIssue> issues)
+		{
+			IReadOnlyList<UtilityAction> actions = config.Actions;
+			if (actions == null || actions.Count <= 1)
+			{
+				return;
+			}
+
+			var contextTypes = new Dictionary<Type, int>();
+			for (int i = 0; i < actions.Count; i++)
+			{
+				UtilityAction action = actions[i];
+				Type contextType = action != null ? GetContextType(action) : null;
+				if (contextType == null || contextTypes.ContainsKey(contextType))
+				{
+					continue;
+				}
+
+				contextTypes.Add(contextType, i);
+			}
+
+			if (contextTypes.Count <= 1)
+			{
+				return;
+			}
+
+			var names = new List<string>(contextTypes.Count);
+			foreach (KeyValuePair<Type, int> pair in contextTypes)
+			{
+				names.Add($"{pair.Key.Name} (action {pair.Value})");
+			}
+
+			issues.Add(new BrainConfigIssue(
+				config,
+				BrainConfigIssueSeverity.Error,
+				BrainConfigIssueCode.ContextTypeMismatch,
+				$"Actions expect different contexts: {string.Join(", ", names)}. " +
+				"Only the actions matching the brain context run; the rest fail and score 0.",
+				ActionsPropertyPath));
+		}
+
+		private static Type GetContextType(UtilityAction action)
+		{
+			if (action is not ScriptableUtilityActionReference reference)
+			{
+				return GetContextArgument(action.GetType(), typeof(UtilityAction<,>));
+			}
+
+			return reference.Action != null
+				? GetContextArgument(reference.Action.GetType(), typeof(ScriptableUtilityAction<,>))
+				: null;
+		}
+
+		private static Type GetContextArgument(Type type, Type definition)
+		{
+			for (Type current = type; current != null; current = current.BaseType)
+			{
+				if (current.IsGenericType && current.GetGenericTypeDefinition() == definition)
+				{
+					return current.GetGenericArguments()[1];
+				}
+			}
+
+			return null;
 		}
 
 		private static UtilityConsideration GetConsideration(UtilityAction action)

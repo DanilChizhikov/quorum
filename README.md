@@ -18,6 +18,7 @@ dependencies from any DI container - Zenject and VContainer adapters ship with t
 - [Usage](#usage)
     - [Considerations](#considerations)
     - [Formula consideration](#formula-consideration)
+- [Managed stripping](#managed-stripping)
 - [Editor Tools](#editor-tools)
     - [Config editing](#config-editing)
     - [Validator](#validator)
@@ -306,7 +307,11 @@ The config asset itself is never copied. In its constructor the brain clones eve
 `Clone()` - a shallow field copy plus a copy of the consideration tree - then injects the clone and
 calls `Initialize` on it, so two brains built from one config never share mutable state and the asset
 stays untouched. `Enable` starts the selection, `Disable` exits the current action and stops the
-updates, and `RequestSwitchAction(delay)` asks for a new selection.
+updates, and `RequestSwitchAction(delay)` asks for a new selection. A delay is counted down by the
+brain's own update, so it fires in the phase the brain runs in and a `BrainUpdateType.Custom` brain
+counts it down when your code ticks it. A `RequestSwitchAction()` without a delay supersedes a
+pending delayed one, and cancelling the token of a pending request cancels the switch instead of
+firing it. `Enable` and `RequestSwitchAction` do nothing once the brain is disposed.
 
 `Clone()` is `virtual` on `UtilityAction`, `UtilityConsideration` and `UtilityScoreAggregator`, and
 the default covers config data: value fields are duplicated, references to shared assets stay
@@ -337,6 +342,13 @@ package manager (`com.svermeulen.extenject`, `com.modesttree.zenject`, `jp.hadas
 the define is applied automatically. When Zenject is installed as plain files under `Assets/Plugins`,
 add `UTILITYAI_ZENJECT_ENABLED` to Scripting Define Symbols manually (same for
 `UTILITYAI_VCONTAINER_ENABLED`).
+
+## Managed stripping
+Actions, considerations and aggregators are created from `[SerializeReference]` data and get their
+dependencies through reflection, so nothing in compiled code references your own types. On
+`Managed Stripping Level = High` that makes them candidates for removal: mark them with
+`[UnityEngine.Scripting.Preserve]`, or keep their assembly in a `link.xml`, and verify with an
+IL2CPP build before shipping.
 
 ## Editor Tools
 

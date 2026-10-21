@@ -23,6 +23,7 @@ namespace DTech.UtilityAI.Editor
 
 		private readonly List<BrainConfigIssue> _issues = new();
 		private readonly List<IUtilityBrainDebugInfo> _brains = new();
+		private readonly List<UtilityScoreSampler> _samplers = new();
 
 		private UtilityActionListDrawProvider _actionsDrawProvider;
 		private SerializedProperty _updateTypeProperty;
@@ -64,23 +65,40 @@ namespace DTech.UtilityAI.Editor
 				_ => MessageType.Info,
 			};
 
-		private static void DrawLiveBrain(IUtilityBrainDebugInfo brain, int index)
+		/// <summary>
+		/// Scores come from a throttled sampler instead of a fresh evaluation per repaint: the inspector
+		/// repaints constantly in play mode, and scoring every action of every live brain each time is
+		/// what makes the editor crawl with a hundred agents.
+		/// </summary>
+		private void DrawLiveBrain(IUtilityBrainDebugInfo brain, int index)
 		{
 			string state = brain.IsEnabled ? "Enabled" : "Disabled";
 			EditorGUILayout.LabelField(
 				$"#{index}",
 				$"{state}    current: {UtilityActionLabel.Get(brain.CurrentAction)} ({brain.CurrentState})");
 
+			UtilityScoreSampler sampler = GetSampler(index - 1);
+			sampler.Sample(brain, false);
 			IReadOnlyList<IUtilityAction> actions = brain.Actions;
 			using (new EditorGUI.IndentLevelScope())
 			{
 				for (int i = 0; i < actions.Count; i++)
 				{
-					float score = UtilityScoreSampler.Evaluate(actions[i], brain.Context, out string error);
-					string value = error ?? score.ToString(ScoreFormat, CultureInfo.InvariantCulture);
+					string error = sampler.GetError(i);
+					string value = error ?? sampler.GetScore(i).ToString(ScoreFormat, CultureInfo.InvariantCulture);
 					EditorGUILayout.LabelField(UtilityActionLabel.Get(actions[i]), value);
 				}
 			}
+		}
+
+		private UtilityScoreSampler GetSampler(int index)
+		{
+			while (_samplers.Count <= index)
+			{
+				_samplers.Add(new UtilityScoreSampler());
+			}
+
+			return _samplers[index];
 		}
 
 		private void OnEnable()
@@ -100,6 +118,7 @@ namespace DTech.UtilityAI.Editor
 		{
 			UtilityBrainDebugRegistry.RemoveObserver();
 			Undo.undoRedoPerformed -= OnUndoRedoPerformed;
+			_samplers.Clear();
 			_actionsDrawProvider?.Dispose();
 			_actionsDrawProvider = null;
 		}

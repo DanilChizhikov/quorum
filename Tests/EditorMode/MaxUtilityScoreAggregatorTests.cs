@@ -64,7 +64,7 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		}
 		
 		[Test]
-		public void Aggregate_NegativeUtilities_ReturnsHighestUtilityIndex()
+		public void Aggregate_AllNegativeUtilities_ReturnsNegativeOne()
 		{
 			var action1 = new MockUtilityAction(-0.5f);
 			var action2 = new MockUtilityAction(-0.2f);
@@ -73,7 +73,7 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			
 			int result = _aggregator.Aggregate(actions, _context);
 			
-			Assert.That(result, Is.EqualTo(1));
+			Assert.That(result, Is.EqualTo(-1));
 		}
 		
 		[Test]
@@ -90,7 +90,7 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		}
 		
 		[Test]
-		public void Aggregate_ZeroUtilityActions_ReturnsFirstIndex()
+		public void Aggregate_AllZeroUtilities_ReturnsNegativeOne()
 		{
 			var action1 = new MockUtilityAction(0f);
 			var action2 = new MockUtilityAction(0f);
@@ -99,7 +99,20 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			
 			int result = _aggregator.Aggregate(actions, _context);
 			
-			Assert.That(result, Is.EqualTo(0));
+			Assert.That(result, Is.EqualTo(-1));
+		}
+		
+		[Test]
+		public void Aggregate_OnlyOnePositiveUtility_ReturnsThatIndex()
+		{
+			var action1 = new MockUtilityAction(0f);
+			var action2 = new MockUtilityAction(0f);
+			var action3 = new MockUtilityAction(0.01f);
+			var actions = new List<IUtilityAction> { action1, action2, action3 };
+			
+			int result = _aggregator.Aggregate(actions, _context);
+			
+			Assert.That(result, Is.EqualTo(2));
 		}
 		
 		private class MockUtilityContext : IUtilityContext

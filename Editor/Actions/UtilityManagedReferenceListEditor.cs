@@ -69,7 +69,7 @@ namespace DTech.UtilityAI.Editor
 			}
 
 			listProperty.GetArrayElementAtIndex(insertIndex).managedReferenceValue = value;
-			target.SerializedObject.ApplyModifiedProperties();
+			listProperty.serializedObject.ApplyModifiedProperties();
 		}
 
 		public static void InsertValues(in UtilityManagedReferenceListTarget target, int index, IReadOnlyList<object> values)
@@ -94,7 +94,7 @@ namespace DTech.UtilityAI.Editor
 			}
 
 			listProperty.GetArrayElementAtIndex(index).managedReferenceValue = value;
-			target.SerializedObject.ApplyModifiedProperties();
+			listProperty.serializedObject.ApplyModifiedProperties();
 		}
 
 		public static void Duplicate(in UtilityManagedReferenceListTarget target, int index)
@@ -112,7 +112,7 @@ namespace DTech.UtilityAI.Editor
 			}
 
 			listProperty.MoveArrayElement(index, Mathf.Clamp(targetIndex, 0, listProperty.arraySize - 1));
-			target.SerializedObject.ApplyModifiedProperties();
+			listProperty.serializedObject.ApplyModifiedProperties();
 		}
 
 		public static void Remove(in UtilityManagedReferenceListTarget target, int index)
@@ -125,7 +125,7 @@ namespace DTech.UtilityAI.Editor
 
 			listProperty.GetArrayElementAtIndex(index).managedReferenceValue = null;
 			listProperty.DeleteArrayElementAtIndex(index);
-			target.SerializedObject.ApplyModifiedProperties();
+			listProperty.serializedObject.ApplyModifiedProperties();
 		}
 
 		public static void Clear(in UtilityManagedReferenceListTarget target)
@@ -137,7 +137,7 @@ namespace DTech.UtilityAI.Editor
 			}
 
 			listProperty.ClearArray();
-			target.SerializedObject.ApplyModifiedProperties();
+			listProperty.serializedObject.ApplyModifiedProperties();
 		}
 	}
 }

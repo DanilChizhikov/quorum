@@ -10,17 +10,28 @@ namespace DTech.UtilityAI.Editor
 	{
 		private const string NoneEntryName = "None";
 		
+		private static UtilityTypeSearchProvider _provider;
+		
 		private string _title;
 		private IReadOnlyList<UtilityTypeOption> _options;
 		private Action<Type> _onTypeSelected;
 		
+		/// <summary>
+		/// Reuses one instance: a provider created per picker leaks a ScriptableObject every time the
+		/// window closes without a selection, and only one picker is open at a time.
+		/// </summary>
 		public static UtilityTypeSearchProvider Create(string title, IReadOnlyList<UtilityTypeOption> options, Action<Type> onTypeSelected)
 		{
-			var provider = CreateInstance<UtilityTypeSearchProvider>();
-			provider._title = title;
-			provider._options = options;
-			provider._onTypeSelected = onTypeSelected;
-			return provider;
+			if (_provider == null)
+			{
+				_provider = CreateInstance<UtilityTypeSearchProvider>();
+				_provider.hideFlags = HideFlags.HideAndDontSave;
+			}
+			
+			_provider._title = title;
+			_provider._options = options;
+			_provider._onTypeSelected = onTypeSelected;
+			return _provider;
 		}
 		
 		private static GUIContent GetEntryContent(UtilityTypeOption option)
@@ -81,7 +92,10 @@ namespace DTech.UtilityAI.Editor
 		bool ISearchWindowProvider.OnSelectEntry(SearchTreeEntry searchTreeEntry, SearchWindowContext context)
 		{
 			var option = searchTreeEntry.userData as UtilityTypeOption;
-			_onTypeSelected?.Invoke(option?.Type);
+			Action<Type> onTypeSelected = _onTypeSelected;
+			_options = null;
+			_onTypeSelected = null;
+			onTypeSelected?.Invoke(option?.Type);
 			return true;
 		}
 	}

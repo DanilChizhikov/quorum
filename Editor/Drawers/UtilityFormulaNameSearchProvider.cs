@@ -10,15 +10,26 @@ namespace DTech.UtilityAI.Editor
 	{
 		private const string Title = "Blackboard Variables";
 
+		private static UtilityFormulaNameSearchProvider _provider;
+
 		private BlackboardAsset _schema;
 		private Action<string> _onNameSelected;
 
+		/// <summary>
+		/// Reuses one instance: a provider created per picker leaks a ScriptableObject every time the
+		/// window closes without a selection, and only one picker is open at a time.
+		/// </summary>
 		public static UtilityFormulaNameSearchProvider Create(BlackboardAsset schema, Action<string> onNameSelected)
 		{
-			var provider = CreateInstance<UtilityFormulaNameSearchProvider>();
-			provider._schema = schema;
-			provider._onNameSelected = onNameSelected;
-			return provider;
+			if (_provider == null)
+			{
+				_provider = CreateInstance<UtilityFormulaNameSearchProvider>();
+				_provider.hideFlags = HideFlags.HideAndDontSave;
+			}
+
+			_provider._schema = schema;
+			_provider._onNameSelected = onNameSelected;
+			return _provider;
 		}
 
 		List<SearchTreeEntry> ISearchWindowProvider.CreateSearchTree(SearchWindowContext context)
@@ -50,7 +61,10 @@ namespace DTech.UtilityAI.Editor
 
 		bool ISearchWindowProvider.OnSelectEntry(SearchTreeEntry searchTreeEntry, SearchWindowContext context)
 		{
-			_onNameSelected?.Invoke(searchTreeEntry.userData as string);
+			Action<string> onNameSelected = _onNameSelected;
+			_schema = null;
+			_onNameSelected = null;
+			onNameSelected?.Invoke(searchTreeEntry.userData as string);
 			return true;
 		}
 	}

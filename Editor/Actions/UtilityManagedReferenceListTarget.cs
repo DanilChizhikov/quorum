@@ -1,27 +1,33 @@
 using UnityEditor;
+using UnityEngine;
 
 namespace DTech.UtilityAI.Editor
 {
+	/// <summary>
+	/// Points at a managed reference list by its owning object and property path, not by a live
+	/// <see cref="SerializedObject"/>: menu and search window callbacks run a frame later, where a
+	/// captured SerializedObject may already belong to a destroyed target.
+	/// </summary>
 	internal readonly struct UtilityManagedReferenceListTarget
 	{
-		public SerializedObject SerializedObject { get; }
+		public Object TargetObject { get; }
 		public string PropertyPath { get; }
 
-		public UtilityManagedReferenceListTarget(SerializedObject serializedObject, string propertyPath)
+		public UtilityManagedReferenceListTarget(Object targetObject, string propertyPath)
 		{
-			SerializedObject = serializedObject;
+			TargetObject = targetObject;
 			PropertyPath = propertyPath;
 		}
 
 		public SerializedProperty FindListProperty()
 		{
-			if (SerializedObject == null || string.IsNullOrEmpty(PropertyPath))
+			if (TargetObject == null || string.IsNullOrEmpty(PropertyPath))
 			{
 				return null;
 			}
 
-			SerializedObject.Update();
-			return SerializedObject.FindProperty(PropertyPath);
+			var serializedObject = new SerializedObject(TargetObject);
+			return serializedObject.FindProperty(PropertyPath);
 		}
 	}
 }

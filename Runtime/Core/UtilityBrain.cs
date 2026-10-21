@@ -57,6 +57,16 @@ namespace DTech.UtilityAI
 
 		public UtilityBrain(TConfig config, TContext context, IUtilityActionInjector injector = null)
 		{
+			if (config == null)
+			{
+				throw new ArgumentNullException(nameof(config));
+			}
+
+			if (context == null)
+			{
+				throw new ArgumentNullException(nameof(context));
+			}
+
 			_context = context;
 			_cachedUpdate = Update;
 			Config = config;
@@ -72,7 +82,7 @@ namespace DTech.UtilityAI
 		
 		public void Enable()
 		{
-			if (IsEnabled)
+			if (_isDisposed || IsEnabled)
 			{
 				return;
 			}
@@ -83,33 +93,47 @@ namespace DTech.UtilityAI
 			_updateProvider.AddUpdate(_cachedUpdate);
 			IsEnabled = true;
 #if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
-			UtilityProfilerCounters.BrainEnabled();
+			UtilityProfilerCounters.SyncActiveBrains();
 #endif
 			RequestSwitchAction();
 		}
 
 		public void RequestSwitchAction(float delay = 0f, CancellationToken token = default)
 		{
-			if (!IsEnabled || _isRequestingSwitchAction)
+			if (_isDisposed || !IsEnabled)
 			{
 				return;
 			}
 
-			_isRequestingSwitchAction = true;
 			if (delay > 0f)
 			{
-				_request ??= new BrainSwitchStateRequest(OnRequestSwitchActionCompleted);
+				if (_isRequestingSwitchAction)
+				{
+					return;
+				}
+
+				_isRequestingSwitchAction = true;
+				_request ??= new BrainSwitchStateRequest(OnRequestSwitchActionCompleted, OnRequestSwitchActionCancelled);
 				_request.Arm(delay, token);
+				return;
 			}
-			else
-			{
-				OnRequestSwitchActionCompleted();
-			}
+
+			// An immediate request supersedes a pending delayed one, otherwise a brain that finished
+			// its action while a delay was armed would stay in that final state until the delay ran out.
+			_request?.Cancel();
+			_isRequestingSwitchAction = true;
+			OnRequestSwitchActionCompleted();
 		}
 
 		public void Update()
 		{
-			if (!IsEnabled || !_hasCurrentAction)
+			if (!IsEnabled)
+			{
+				return;
+			}
+
+			_request?.Tick();
+			if (!_hasCurrentAction)
 			{
 				return;
 			}
@@ -121,7 +145,7 @@ namespace DTech.UtilityAI
 				OnActionStateChange?.Invoke(actionState);
 			}
 			
-			if (_switchActionType == SwitchActionType.Manual)
+			if (_switchActionType == SwitchActionType.OnActionFinished)
 			{
 				switch (actionState)
 				{
@@ -178,7 +202,7 @@ namespace DTech.UtilityAI
 			SetCurrentAction(null);
 			IsEnabled = false;
 #if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
-			UtilityProfilerCounters.BrainDisabled();
+			UtilityProfilerCounters.SyncActiveBrains();
 #endif
 		}
 		
@@ -191,6 +215,8 @@ namespace DTech.UtilityAI
 			
 			_isDisposed = true;
 			Disable();
+			OnActionChanged = null;
+			OnActionStateChange = null;
 			for (int i = 0; i < _actions.Length; i++)
 			{
 				if (_actions[i] is IDisposable disposableAction)
@@ -262,6 +288,11 @@ namespace DTech.UtilityAI
 			OnActionChanged?.Invoke();
 		}
 		
+		private void OnRequestSwitchActionCancelled()
+		{
+			_isRequestingSwitchAction = false;
+		}
+
 		private void OnRequestSwitchActionCompleted()
 		{
 			_request?.Cancel();

@@ -49,7 +49,7 @@ Agents are the only writers of the blackboard and considerations are the only re
 ## Gotchas this sample works around
 - `BlackboardAsset.ToRuntimeBlackboard()` shares the asset's variable instances. Agents build their blackboard in
   code so play mode never writes into an asset and two agents never share needs.
-- `RequestSwitchAction(delay)` with a delay stays pending and blocks the switch a Manual brain makes when an action
+- `RequestSwitchAction(delay)` with a delay stays pending and blocks the switch an OnActionFinished brain makes when an action
   completes. The agent uses its own timer and calls `RequestSwitchAction()` without a delay; re-selecting the
   running action is a no-op.
 - `CalculateUtility` must stay side-effect free: the Debugger, Brain Map and Scoring Matrix call it outside the

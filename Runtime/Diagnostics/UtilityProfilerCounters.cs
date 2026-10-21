@@ -22,14 +22,13 @@ namespace DTech.UtilityAI.Diagnostics
 
 		public static ProfilerMarker SelectActionMarker { get; } = new("UtilityAI.SelectAction");
 
-		public static void BrainEnabled()
+		/// <summary>
+		/// Reads the count back from the registry instead of counting up and down: a brain collected
+		/// without Disable or Dispose would otherwise inflate the counter until the domain reloads.
+		/// </summary>
+		public static void SyncActiveBrains()
 		{
-			_activeBrains.Value++;
-		}
-
-		public static void BrainDisabled()
-		{
-			_activeBrains.Value--;
+			_activeBrains.Value = UtilityBrainDebugRegistry.GetEnabledCount();
 		}
 
 		public static void ActionSwitched()

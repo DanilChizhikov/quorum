@@ -11,7 +11,7 @@ namespace DTech.UtilityAI
 		private BrainUpdateType _updateType = BrainUpdateType.Update;
 		
 		[SerializeField]
-		private SwitchActionType _switchActionType = SwitchActionType.Manual;
+		private SwitchActionType _switchActionType = SwitchActionType.OnActionFinished;
 
 		[SerializeReference]
 		private UtilityAction[] _actionEntries = Array.Empty<UtilityAction>();

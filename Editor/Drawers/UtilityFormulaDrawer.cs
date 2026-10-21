@@ -120,11 +120,13 @@ namespace DTech.UtilityAI.Editor
 
 		private static void OpenNamePicker(Rect buttonRect, SerializedProperty property, BlackboardAsset schema)
 		{
-			SerializedObject serializedObject = property.serializedObject;
+			// The callback runs in a later frame: keep the target object and the path, not a live
+			// SerializedObject that may belong to a destroyed target by then.
+			Object targetObject = property.serializedObject.targetObject;
 			string propertyPath = property.propertyPath;
 			UtilityFormulaNameSearchProvider provider = UtilityFormulaNameSearchProvider.Create(
 				schema,
-				name => AppendName(serializedObject, propertyPath, name));
+				name => AppendName(targetObject, propertyPath, name));
 
 			var searchContext = new SearchWindowContext(
 				GUIUtility.GUIToScreenPoint(new Vector2(buttonRect.x, buttonRect.yMax)));
@@ -132,14 +134,14 @@ namespace DTech.UtilityAI.Editor
 			SearchWindow.Open(searchContext, provider);
 		}
 
-		private static void AppendName(SerializedObject serializedObject, string propertyPath, string name)
+		private static void AppendName(Object targetObject, string propertyPath, string name)
 		{
-			if (serializedObject == null || string.IsNullOrEmpty(name))
+			if (targetObject == null || string.IsNullOrEmpty(name))
 			{
 				return;
 			}
 
-			serializedObject.Update();
+			var serializedObject = new SerializedObject(targetObject);
 			SerializedProperty property = serializedObject.FindProperty(propertyPath);
 			if (property == null)
 			{

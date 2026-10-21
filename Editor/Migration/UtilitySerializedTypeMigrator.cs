@@ -11,13 +11,20 @@ namespace DTech.UtilityAI.Editor
 {
 	internal static class UtilitySerializedTypeMigrator
 	{
-		private const string ConfigFilter = "t:BrainConfig";
+		private const string AssetFilter = "t:BrainConfig t:ScriptableUtilityAction";
+		private const string TextModeWarning = "[UtilityAI] Serialized type migration reads and rewrites the asset text, " +
+												"which needs Project Settings > Editor > Asset Serialization set to Force Text.";
 		private const string ReferencePattern = @"type:\s*\{class:\s*(?<class>[^,}]+),\s*ns:\s*(?<ns>[^,}]*),\s*asm:\s*(?<asm>[^}]+)\}";
 		private const string ReferenceFormat = "type: {{class: {0}, ns: {1}, asm: {2}}}";
 
 		public static List<UtilityTypeMigration> Collect()
 		{
 			var migrations = new List<UtilityTypeMigration>();
+			if (!IsTextSerialization())
+			{
+				return migrations;
+			}
+
 			Dictionary<string, Type> formerNames = CollectFormerNames();
 			if (formerNames.Count <= 0)
 			{
@@ -25,7 +32,7 @@ namespace DTech.UtilityAI.Editor
 			}
 
 			var referenceRegex = new Regex(ReferencePattern);
-			string[] guids = AssetDatabase.FindAssets(ConfigFilter);
+			string[] guids = AssetDatabase.FindAssets(AssetFilter);
 			for (int i = 0; i < guids.Length; i++)
 			{
 				string path = AssetDatabase.GUIDToAssetPath(guids[i]);
@@ -42,7 +49,7 @@ namespace DTech.UtilityAI.Editor
 
 		public static int Apply(IReadOnlyList<UtilityTypeMigration> migrations)
 		{
-			if (migrations == null || migrations.Count <= 0)
+			if (migrations == null || migrations.Count <= 0 || !IsTextSerialization())
 			{
 				return 0;
 			}
@@ -159,7 +166,7 @@ namespace DTech.UtilityAI.Editor
 				changed = true;
 				return string.Format(
 					ReferenceFormat,
-					type.Name,
+					GetSerializedClassName(type),
 					type.Namespace ?? string.Empty,
 					type.Assembly.GetName().Name);
 			});
@@ -172,6 +179,34 @@ namespace DTech.UtilityAI.Editor
 			File.WriteAllText(path, result);
 			Debug.Log($"[UtilityAI] Migrated serialized types in {path}.");
 			return true;
+		}
+
+		private static bool IsTextSerialization()
+		{
+			if (EditorSettings.serializationMode == SerializationMode.ForceText)
+			{
+				return true;
+			}
+
+			Debug.LogWarning(TextModeWarning);
+			return false;
+		}
+
+		/// <summary>
+		/// Unity writes a nested type as Outer/Inner in the class field of a SerializeReference entry,
+		/// so the outer type cannot be dropped: a bare Name breaks the reference instead of migrating it.
+		/// </summary>
+		private static string GetSerializedClassName(Type type)
+		{
+			string className = type.FullName ?? type.Name;
+			string namespaceName = type.Namespace;
+			if (!string.IsNullOrEmpty(namespaceName) &&
+				className.StartsWith(string.Concat(namespaceName, "."), StringComparison.Ordinal))
+			{
+				className = className.Substring(namespaceName.Length + 1);
+			}
+
+			return className.Replace('+', '/');
 		}
 
 		private static string GetKey(Match match)

@@ -5,7 +5,7 @@ namespace DTech.UtilityAI.Samples.Village
 {
 	/// <summary>
 	/// Walk to the closest bush and eat it. Fails when another villager eats it first -
-	/// with SwitchActionType.Manual a failed action makes the brain pick again right away.
+	/// with SwitchActionType.OnActionFinished a failed action makes the brain pick again right away.
 	/// </summary>
 	[Serializable]
 	[UtilityMenu("Village/Villager/Eat")]
