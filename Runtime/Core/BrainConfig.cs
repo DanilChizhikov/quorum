@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DTech.Blackboard;
 using UnityEngine;
 
 namespace DTech.UtilityAI
@@ -14,32 +15,18 @@ namespace DTech.UtilityAI
 
 		[SerializeReference]
 		private UtilityAction[] _actionEntries = Array.Empty<UtilityAction>();
-
-		[SerializeReference]
-		private UtilityConsideration _consideration = default;
 		
 		[SerializeReference]
 		private UtilityScoreAggregator _scoreAggregator = new MaxUtilityScoreAggregator();
 		
-		[SerializeField, HideInInspector]
-		private ScriptableUtilityAction[] _actions = Array.Empty<ScriptableUtilityAction>();
-		
-#if UNITY_EDITOR
 		[SerializeField]
-		private Blackboard.BlackboardAsset _blackboardSchema = default;
-#endif
+		private BlackboardAsset _blackboardSchema = default;
 		
 		public BrainUpdateType UpdateType => _updateType;
 		public SwitchActionType SwitchActionType => _switchActionType;
 		public IReadOnlyList<UtilityAction> Actions => _actionEntries;
 		public UtilityScoreAggregator ScoreAggregator => _scoreAggregator;
-		public UtilityConsideration Consideration => _consideration;
-		
-#if UNITY_EDITOR
-		internal Blackboard.BlackboardAsset BlackboardSchema => _blackboardSchema;
-#endif
-		
-		internal bool HasLegacyActions => _actions is { Length: > 0 };
+		public BlackboardAsset BlackboardSchema => _blackboardSchema;
 		
 		internal void SetActions(UtilityAction[] actions)
 		{
@@ -51,34 +38,11 @@ namespace DTech.UtilityAI
 			_scoreAggregator = scoreAggregator;
 		}
 		
-#if UNITY_EDITOR
-		internal void SetBlackboardSchema(Blackboard.BlackboardAsset schema)
+		#if UNITY_EDITOR
+		internal void SetBlackboardSchema(BlackboardAsset schema)
 		{
 			_blackboardSchema = schema;
 		}
-#endif
-		
-		internal void UpgradeLegacyActions()
-		{
-			if (!HasLegacyActions)
-			{
-				return;
-			}
-
-			var entries = new List<UtilityAction>(_actionEntries ?? Array.Empty<UtilityAction>());
-			for (int i = 0; i < _actions.Length; i++)
-			{
-				ScriptableUtilityAction action = _actions[i];
-				if (action == null)
-				{
-					continue;
-				}
-				
-				entries.Add(new ScriptableUtilityActionReference(action));
-			}
-
-			_actionEntries = entries.ToArray();
-			_actions = Array.Empty<ScriptableUtilityAction>();
-		}
+		#endif
 	}
 }

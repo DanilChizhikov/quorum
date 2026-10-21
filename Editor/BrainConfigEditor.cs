@@ -12,7 +12,6 @@ namespace DTech.UtilityAI.Editor
 		private const string UpdateTypePropertyName = "_updateType";
 		private const string SwitchActionTypePropertyName = "_switchActionType";
 		private const string ActionsPropertyName = "_actionEntries";
-		private const string ConsiderationPropertyName = "_consideration";
 		private const string ScoreAggregatorPropertyName = "_scoreAggregator";
 		private const string BlackboardSchemaPropertyName = "_blackboardSchema";
 		private const string FixLabel = "Fix";
@@ -22,18 +21,12 @@ namespace DTech.UtilityAI.Editor
 		private const string ScoreFormat = "0.000";
 		private const float DebuggerButtonWidth = 140f;
 
-		private static readonly GUIContent _blackboardSchemaContent = new(
-			"Blackboard Schema",
-			"Editor only. Names the formula fields of this config are checked against. " +
-			"The brain never reads it: agents still build and own their RuntimeBlackboard.");
-
 		private readonly List<BrainConfigIssue> _issues = new();
 		private readonly List<IUtilityBrainDebugInfo> _brains = new();
 
 		private UtilityActionListDrawProvider _actionsDrawProvider;
 		private SerializedProperty _updateTypeProperty;
 		private SerializedProperty _switchActionTypeProperty;
-		private SerializedProperty _considerationProperty;
 		private SerializedProperty _scoreAggregatorProperty;
 		private SerializedProperty _blackboardSchemaProperty;
 		private bool _issuesDirty = true;
@@ -43,20 +36,15 @@ namespace DTech.UtilityAI.Editor
 			serializedObject.Update();
 			DrawIssues();
 			DrawLiveBrains();
-			if (_blackboardSchemaProperty != null)
-			{
-				EditorGUILayout.PropertyField(_blackboardSchemaProperty, _blackboardSchemaContent);
-				EditorGUILayout.Space();
-			}
 
 			using (new EditorGUI.DisabledScope(Application.isPlaying))
 			{
 				EditorGUILayout.PropertyField(_updateTypeProperty);
 				EditorGUILayout.PropertyField(_switchActionTypeProperty);
+				EditorGUILayout.PropertyField(_blackboardSchemaProperty);
 				EditorGUILayout.Space();
 				_actionsDrawProvider.Draw();
 				EditorGUILayout.Space();
-				EditorGUILayout.PropertyField(_considerationProperty);
 				EditorGUILayout.PropertyField(_scoreAggregatorProperty);
 			}
 
@@ -99,7 +87,6 @@ namespace DTech.UtilityAI.Editor
 		{
 			_updateTypeProperty = serializedObject.FindProperty(UpdateTypePropertyName);
 			_switchActionTypeProperty = serializedObject.FindProperty(SwitchActionTypePropertyName);
-			_considerationProperty = serializedObject.FindProperty(ConsiderationPropertyName);
 			_scoreAggregatorProperty = serializedObject.FindProperty(ScoreAggregatorPropertyName);
 			_blackboardSchemaProperty = serializedObject.FindProperty(BlackboardSchemaPropertyName);
 			SerializedProperty actionsProperty = serializedObject.FindProperty(ActionsPropertyName);
@@ -139,13 +126,15 @@ namespace DTech.UtilityAI.Editor
 
 			for (int i = 0; i < _issues.Count; i++)
 			{
-				DrawIssue(_issues[i]);
+				BrainConfigIssue issue = _issues[i];
+				DrawIssue(issue);
 			}
 		}
 
 		private void DrawIssue(in BrainConfigIssue issue)
 		{
-			EditorGUILayout.HelpBox(issue.Message, GetMessageType(issue.Severity));
+			MessageType messageType = GetMessageType(issue.Severity);
+			EditorGUILayout.HelpBox(issue.Message, messageType);
 			if (!BrainConfigIssueFixer.CanFix(issue.Code))
 			{
 				return;

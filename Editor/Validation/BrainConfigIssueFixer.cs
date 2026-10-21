@@ -15,7 +15,6 @@ namespace DTech.UtilityAI.Editor
 				BrainConfigIssueCode.MissingScoreAggregator => true,
 				BrainConfigIssueCode.NullActionEntry => true,
 				BrainConfigIssueCode.MissingManagedType => true,
-				BrainConfigIssueCode.LegacyActionsNotUpgraded => true,
 				_ => false,
 			};
 
@@ -31,7 +30,6 @@ namespace DTech.UtilityAI.Editor
 				BrainConfigIssueCode.MissingScoreAggregator => AssignDefaultAggregator(issue.Config),
 				BrainConfigIssueCode.NullActionEntry => RemoveEmptyActions(issue.Config),
 				BrainConfigIssueCode.MissingManagedType => ClearProperty(issue.Config, issue.PropertyPath),
-				BrainConfigIssueCode.LegacyActionsNotUpgraded => UpgradeLegacyActions(issue.Config),
 				_ => false,
 			};
 		}
@@ -118,20 +116,6 @@ namespace DTech.UtilityAI.Editor
 
 			property.managedReferenceValue = null;
 			serializedObject.ApplyModifiedProperties();
-			return true;
-		}
-
-		private static bool UpgradeLegacyActions(BrainConfig config)
-		{
-			if (!config.HasLegacyActions)
-			{
-				return false;
-			}
-
-			Undo.RecordObject(config, UpgradeUndoName);
-			config.UpgradeLegacyActions();
-			EditorUtility.SetDirty(config);
-			AssetDatabase.SaveAssetIfDirty(config);
 			return true;
 		}
 	}
