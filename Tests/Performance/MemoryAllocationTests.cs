@@ -123,6 +123,28 @@ namespace DTech.UtilityAI.Tests.Performance
 				nameof(Score_SixActions_CompositeBlackboardCached_NoAllocations));
 		}
 
+		[Test]
+		public void Score_SixActions_CompositeFormula_NoAllocations()
+		{
+			if (!IsAllocationTrackingSupported())
+			{
+				Assert.Ignore("GC.GetAllocatedBytesForCurrentThread is not supported on this runtime.");
+			}
+
+			_set = CreateSet(1, PerfConsiderationKind.CompositeFormula);
+			_set.EnableAll();
+			PerfUtilityBrain brain = _set.First;
+			Action request = () => brain.RequestSwitchAction();
+			Warmup(request);
+
+			long bytesPerCall = MeasureBytesPerCall(request, MeasurementIterations);
+
+			AssertWithinBudget(
+				bytesPerCall,
+				NoAllocationsBudget,
+				nameof(Score_SixActions_CompositeFormula_NoAllocations));
+		}
+
 		private static PerfBrainSet CreateSet(int brainCount, PerfConsiderationKind considerationKind)
 		{
 			var setup = new PerfBrainSetup(brainCount, ACTION_COUNT, CONSIDERATION_COUNT, considerationKind);

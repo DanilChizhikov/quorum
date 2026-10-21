@@ -24,11 +24,20 @@ namespace DTech.UtilityAI
 		[SerializeField, HideInInspector]
 		private ScriptableUtilityAction[] _actions = Array.Empty<ScriptableUtilityAction>();
 		
+#if UNITY_EDITOR
+		[SerializeField]
+		private Blackboard.BlackboardAsset _blackboardSchema = default;
+#endif
+		
 		public BrainUpdateType UpdateType => _updateType;
 		public SwitchActionType SwitchActionType => _switchActionType;
 		public IReadOnlyList<UtilityAction> Actions => _actionEntries;
 		public UtilityScoreAggregator ScoreAggregator => _scoreAggregator;
 		public UtilityConsideration Consideration => _consideration;
+		
+#if UNITY_EDITOR
+		internal Blackboard.BlackboardAsset BlackboardSchema => _blackboardSchema;
+#endif
 		
 		internal bool HasLegacyActions => _actions is { Length: > 0 };
 		
@@ -41,6 +50,13 @@ namespace DTech.UtilityAI
 		{
 			_scoreAggregator = scoreAggregator;
 		}
+		
+#if UNITY_EDITOR
+		internal void SetBlackboardSchema(Blackboard.BlackboardAsset schema)
+		{
+			_blackboardSchema = schema;
+		}
+#endif
 		
 		internal void UpgradeLegacyActions()
 		{

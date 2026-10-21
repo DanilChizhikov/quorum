@@ -14,12 +14,18 @@ namespace DTech.UtilityAI.Editor
 		private const string ActionsPropertyName = "_actionEntries";
 		private const string ConsiderationPropertyName = "_consideration";
 		private const string ScoreAggregatorPropertyName = "_scoreAggregator";
+		private const string BlackboardSchemaPropertyName = "_blackboardSchema";
 		private const string FixLabel = "Fix";
 		private const float FixButtonWidth = 60f;
 		private const string LiveTitle = "Live";
 		private const string OpenDebuggerLabel = "Open In Debugger";
 		private const string ScoreFormat = "0.000";
 		private const float DebuggerButtonWidth = 140f;
+
+		private static readonly GUIContent _blackboardSchemaContent = new(
+			"Blackboard Schema",
+			"Editor only. Names the formula fields of this config are checked against. " +
+			"The brain never reads it: agents still build and own their RuntimeBlackboard.");
 
 		private readonly List<BrainConfigIssue> _issues = new();
 		private readonly List<IUtilityBrainDebugInfo> _brains = new();
@@ -29,6 +35,7 @@ namespace DTech.UtilityAI.Editor
 		private SerializedProperty _switchActionTypeProperty;
 		private SerializedProperty _considerationProperty;
 		private SerializedProperty _scoreAggregatorProperty;
+		private SerializedProperty _blackboardSchemaProperty;
 		private bool _issuesDirty = true;
 
 		public override void OnInspectorGUI()
@@ -36,6 +43,12 @@ namespace DTech.UtilityAI.Editor
 			serializedObject.Update();
 			DrawIssues();
 			DrawLiveBrains();
+			if (_blackboardSchemaProperty != null)
+			{
+				EditorGUILayout.PropertyField(_blackboardSchemaProperty, _blackboardSchemaContent);
+				EditorGUILayout.Space();
+			}
+
 			using (new EditorGUI.DisabledScope(Application.isPlaying))
 			{
 				EditorGUILayout.PropertyField(_updateTypeProperty);
@@ -88,6 +101,7 @@ namespace DTech.UtilityAI.Editor
 			_switchActionTypeProperty = serializedObject.FindProperty(SwitchActionTypePropertyName);
 			_considerationProperty = serializedObject.FindProperty(ConsiderationPropertyName);
 			_scoreAggregatorProperty = serializedObject.FindProperty(ScoreAggregatorPropertyName);
+			_blackboardSchemaProperty = serializedObject.FindProperty(BlackboardSchemaPropertyName);
 			SerializedProperty actionsProperty = serializedObject.FindProperty(ActionsPropertyName);
 			_actionsDrawProvider = new UtilityActionListDrawProvider(serializedObject, actionsProperty);
 			_issuesDirty = true;

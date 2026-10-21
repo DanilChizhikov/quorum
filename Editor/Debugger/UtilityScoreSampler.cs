@@ -8,6 +8,7 @@ namespace DTech.UtilityAI.Editor
 	internal sealed class UtilityScoreSampler
 	{
 		private const double DefaultInterval = 0.1d;
+		private const string MissingVariablesPrefix = "missing: ";
 
 		private readonly List<float> _scores = new();
 		private readonly List<string> _errors = new();
@@ -45,15 +46,19 @@ namespace DTech.UtilityAI.Editor
 				return 0f;
 			}
 
+			float score;
 			try
 			{
-				return consideration.Evaluate(context);
+				score = consideration.Evaluate(context);
 			}
 			catch (Exception exception)
 			{
 				error = exception.Message;
 				return float.NaN;
 			}
+
+			error = GetUnresolvedVariablesMessage(consideration);
+			return score;
 		}
 
 		public bool Sample(IUtilityBrainDebugInfo brain, bool force)
@@ -111,6 +116,17 @@ namespace DTech.UtilityAI.Editor
 		{
 			_scores.Clear();
 			_errors.Clear();
+		}
+
+		private static string GetUnresolvedVariablesMessage(UtilityConsideration consideration)
+		{
+			if (consideration is not FormulaUtilityConsideration formula)
+			{
+				return null;
+			}
+
+			string unresolved = formula.UnresolvedVariables;
+			return string.IsNullOrEmpty(unresolved) ? null : $"{MissingVariablesPrefix}{unresolved}";
 		}
 	}
 }

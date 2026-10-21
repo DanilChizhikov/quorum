@@ -17,6 +17,7 @@ dependencies from any DI container - Zenject and VContainer adapters ship with t
 - [Features](#features)
 - [Usage](#usage)
     - [Considerations](#considerations)
+    - [Formula consideration](#formula-consideration)
 - [Editor Tools](#editor-tools)
     - [Config editing](#config-editing)
     - [Validator](#validator)
@@ -63,6 +64,7 @@ For example `https://github.com/DanilChizhikov/utilityai.git#v1.0.0`.
 - One action instance per brain: the config is cloned at construction, so agents never share action state.
 - Dependency injection through `IUtilityActionInjector`, with ready adapters for Zenject and VContainer.
 - Composable considerations (`CompositeUtilityConsideration`: multiply, min, max, average, sum).
+- `FormulaUtilityConsideration`: a weight written as a math formula, reading its inputs from the blackboard, with live green/red validation in the inspector.
 - `ScriptableUtilityAction` assets are referenced from the config through `ScriptableUtilityActionReference`.
 - Update driven by the player loop (`Update`, `FixedUpdate`) or by your own code (`BrainUpdateType.Custom`).
 
@@ -82,6 +84,21 @@ public sealed class EnemyContext : UtilityContext<EnemyAgent>
     public EnemyContext(EnemyAgent agent, RuntimeBlackboard blackboard) : base(agent, blackboard) { }
 }
 ```
+
+**The blackboard belongs to the agent, not to the config.** Nothing in the package ever creates a
+`RuntimeBlackboard`: your agent builds one, hands it to the context, and the context goes into the
+brain. `BrainConfig` holds actions, considerations and the aggregator - it has no blackboard field and
+never looks for one, which is what lets a single config drive a thousand agents that each sense their
+own world.
+
+```
+agent  : new RuntimeBlackboard(4) + Add(...)
+       : new EnemyContext(this, blackboard)
+       : new EnemyBrain(config, context, injector)
+brain  : reads context.Blackboard, never the config
+```
+
+Dispose the blackboard with the agent, as `VillagerAgent` does in the sample.
 
 ### Action as a plain class
 ```csharp
@@ -133,6 +150,141 @@ One exception: a consideration that lives on a `ScriptableUtilityAction` **asset
 every brain that references it, so it must not cache per-agent data. The brain does not call
 `Initialize` on it for that reason - keep such considerations stateless, or move the action into the
 config as a plain `[Serializable]` class.
+
+### Formula consideration
+`FormulaUtilityConsideration` is a weight written as a formula instead of a class. Every identifier in
+it is a blackboard variable name, so a designer can shape a score without a recompile:
+
+```
+clamp01(Hunger / 100) * if(FoodAvailable, 1, 0.2)
+```
+
+Pick `Formula` in the consideration picker and type into the `Expression` field. The formula is the
+only thing the consideration has to author.
+
+The field is wrapped in an outline that fades outward: **green** while the formula compiles, **red**
+while it does not, with the reason and the character position on a line below. Under the field the
+formula is echoed with its tokens coloured - functions, variables, numbers, constants and operators
+each their own colour, and brackets cycling through four colours by nesting depth so a `)` always
+matches the `(` that shares its colour. An unmatched bracket is red. Field and echo share a monospace
+font, so the character position in an error message points at a column you can count to.
+
+The same compile check runs over every config in `Window/DTech/Utility AI/Validator`, so a broken
+formula three composites deep is reported there as well.
+
+The score is **0** whenever the formula cannot produce a number: the expression does not compile, a
+variable is not on the blackboard, or the result is not finite. There is no fallback to configure -
+the same rule the sample's `BlackboardCurveConsideration` follows when its variable is missing.
+
+#### Variables
+An identifier that is not a function or a constant is looked up in `IUtilityContext.Blackboard` by
+name. Matching follows the blackboard's own rule - trimmed and case-insensitive - and `float`, `int`
+and `bool` variables are all accepted, a `bool` reading as `1` or `0`. For a name that is not a plain
+identifier, wrap it in braces: `{Max Hunger}`.
+
+The formula is compiled once and every variable is resolved to its `BlackboardVariable<T>` once, in
+`Initialize`, exactly as [Considerations](#considerations) asks. `Evaluate` then only reads the cached
+handles and walks the compiled program, so it allocates nothing. A consideration that never got
+`Initialize` - one on a `ScriptableUtilityAction` asset, or one the editor tools score off-tick -
+compiles and resolves on its first `Evaluate` instead. Either way it recompiles and re-resolves
+whenever the expression or the `RuntimeBlackboard` it was given changes, so tuning a formula in the
+inspector takes effect while the game is running.
+
+A name the blackboard has no variable for makes the whole formula score 0 rather than quietly reading
+as zero, because a typo that produces a plausible number is worse than one that produces none. At
+runtime the verdict is in the debugger: open `Window/DTech/Utility AI/Debugger` and the formula's node
+names them, `missing: Hungr`, in place of its score.
+
+To catch a typo without entering play mode, set **Blackboard Schema** on the `BrainConfig` to a
+`BlackboardAsset` listing the names the agents put on their blackboard. The field is editor-only - it
+is compiled out of a player build and the brain never reads it, so agents keep building and owning
+their own `RuntimeBlackboard` and nothing about runtime changes. What it buys:
+
+- a name the schema does not have is painted in the warning colour in the highlighted line, with
+  `Not on the blackboard: Hungr` under it. The outline stays green, because the formula still compiles
+  - it will just score 0;
+- a `▾` button beside the field lists the schema's names and appends the one you pick, wrapping it in
+  braces when it is not a plain identifier;
+- the Validator reports `UnknownFormulaVariable` as a **warning** over the whole project. A warning,
+  not an error, because a schema is allowed to be a subset of what an agent actually writes.
+
+Leave the field empty and none of that happens - no flagging, no button, no validator issue. Matching
+follows the blackboard's own rule, trimmed and case-insensitive. A formula on a
+`ScriptableUtilityAction` asset has no config to read a schema from, so it keeps syntax checking only.
+
+#### Grammar
+Operators, loosest binding first. `^` is right-associative, every other operator is left-associative:
+
+| Precedence | Operators |
+|---|---|
+| 1 | `\|\|` |
+| 2 | `&&` |
+| 3 | `==` `!=` |
+| 4 | `<` `<=` `>` `>=` |
+| 5 | `+` `-` |
+| 6 | `*` `/` `%` |
+| 7 | unary `-` `!` |
+| 8 | `^` |
+
+Comparisons and logic produce `1` or `0`, and any non-zero value counts as true. Numbers are written
+`123`, `1.5` or `.5`, always with a dot, and exponent notation is not supported. Constants: `pi`, `e`.
+
+| Function | Arguments |
+|---|---|
+| `min` `max` `pow` `step` | 2 |
+| `clamp` `lerp` `inverseLerp` `smoothstep` `if` | 3 |
+| `clamp01` `abs` `sqrt` `floor` `ceil` `round` `sign` `exp` `log` `sin` `cos` | 1 |
+
+Function names are case-insensitive, and the argument count is checked when the formula compiles.
+
+#### Two rules worth knowing
+Arithmetic is **total**: `x / 0` and `x % 0` are `0`, `sqrt` of a negative is `0`, and `log` of zero
+or less is `0`. Anything that still comes out as a NaN or an infinity scores `0`.
+
+`if()` is **not lazy** - it is a function, so all three arguments are evaluated. Together with total
+arithmetic that is harmless: `if(dist > 0, 1 / dist, 0)` returns `0` at `dist == 0` rather than
+poisoning the score. It does mean a formula cannot use `if()` to guard against an expensive branch.
+
+#### Reusing the field
+The validated field is driven by `[UtilityFormula]` on any serialized string, so an action of your own
+can carry a formula too:
+
+```csharp
+[Serializable]
+[UtilityMenu("Enemy/Chase Target")]
+public sealed class ChaseTargetAction : UtilityAction<EnemyAgent, EnemyContext>
+{
+    [SerializeField, UtilityFormula]
+    private string _speed = "clamp(Threat * 2, 1, 6)";
+
+    [Inject]
+    private IPathfinder _pathfinder;
+
+    private UtilityFormulaEvaluator _evaluator;
+
+    protected override void Initialize(EnemyContext context)
+    {
+        _evaluator = new UtilityFormulaEvaluator();
+        _evaluator.TrySetExpression(_speed);
+        _evaluator.Bind(context.Blackboard);
+    }
+
+    protected override void Enter(EnemyContext context) => _pathfinder.Begin(context.Agent.Transform);
+
+    protected override UtilityActionState OnTick(EnemyContext context) =>
+        _pathfinder.Move(_evaluator.Evaluate(1f)) ? UtilityActionState.Completed : UtilityActionState.Running;
+
+    protected override void Exit(EnemyContext context) => _pathfinder.Stop();
+}
+```
+
+`Initialize(TContext)` is the per-brain hook the brain calls on the clone, so building the evaluator
+there - rather than in a field initializer - keeps two brains built from one config off each other's
+bindings.
+
+`UtilityFormulaEvaluator` holds per-agent data, so give every agent its own and never share one
+between brains. `UtilityFormulaCompiler.TryCompile` is the same entry point the inspector and the
+validator use, if you want to check a formula yourself.
 
 ### Config and brain
 Create a `BrainConfig` subclass, make an asset of it, then add actions with the `+` button of the

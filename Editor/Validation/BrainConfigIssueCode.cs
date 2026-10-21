@@ -13,5 +13,7 @@ namespace DTech.UtilityAI.Editor
 		CompositeWithoutChildren = 8,
 		CompositeWithSingleChild = 9,
 		ActionWithoutScoreSource = 10,
+		InvalidFormula = 11,
+		UnknownFormulaVariable = 12,
 	}
 }
