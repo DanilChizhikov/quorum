@@ -1,13 +1,13 @@
 using System;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Walk to a random point of the map. Completes on arrival, which is when the wolf brain re-rolls.
 	/// </summary>
 	[Serializable]
-	[UtilityMenu("Village/Wolf/Patrol")]
+	[QuorumMenu("Village/Wolf/Patrol")]
 	public sealed class PatrolAction : VillageAction<WolfAgent, WolfContext>
 	{
 		[SerializeField]
@@ -25,10 +25,10 @@ namespace DTech.UtilityAI.Samples.Village
 			_target = World.GetRandomPoint();
 		}
 
-		protected override UtilityActionState OnTick(WolfContext context)
+		protected override QuorumActionState OnTick(WolfContext context)
 		{
 			context.Agent.Stamina += _staminaRestorePerSecond * Time.deltaTime;
-			return context.Agent.Mover.MoveTo(_target, _speed) ? UtilityActionState.Completed : UtilityActionState.Running;
+			return context.Agent.Mover.MoveTo(_target, _speed) ? QuorumActionState.Completed : QuorumActionState.Running;
 		}
 
 		protected override void Exit(WolfContext context) { }

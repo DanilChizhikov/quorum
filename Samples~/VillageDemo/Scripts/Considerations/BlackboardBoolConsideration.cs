@@ -2,14 +2,14 @@ using System;
 using DTech.Blackboard;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Gate on a bool blackboard variable. Multiplied inside a composite it switches an action off.
 	/// </summary>
 	[Serializable]
-	[UtilityMenu("Blackboard/Bool Gate")]
-	public sealed class BlackboardBoolConsideration : UtilityConsideration
+	[QuorumMenu("Blackboard/Bool Gate")]
+	public sealed class BlackboardBoolConsideration : Consideration
 	{
 		[SerializeField]
 		private string _key = string.Empty;
@@ -31,7 +31,7 @@ namespace DTech.UtilityAI.Samples.Village
 			_whenFalse = whenFalse;
 		}
 
-		public override void Initialize(IUtilityContext context)
+		public override void Initialize(IQuorumContext context)
 		{
 			RuntimeBlackboard blackboard = context.Blackboard;
 			if (blackboard == null || !blackboard.TryGetVariable(_key, out BlackboardVariable<bool> variable))
@@ -43,7 +43,7 @@ namespace DTech.UtilityAI.Samples.Village
 			_variable = variable;
 		}
 
-		public override float Evaluate(IUtilityContext context)
+		public override float Evaluate(IQuorumContext context)
 		{
 			if (_variable == null)
 			{

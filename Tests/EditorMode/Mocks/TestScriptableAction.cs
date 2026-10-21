@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace DTech.UtilityAI.Tests.EditorMode
+namespace DTech.Quorum.Tests.EditorMode
 {
-	internal sealed class TestScriptableAction : ScriptableUtilityAction
+	internal sealed class TestScriptableAction : ScriptableQuorumAction
 	{
 		private float _utility;
 		
@@ -10,32 +10,32 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		public int EnterCount { get; private set; }
 		public int TickCount { get; private set; }
 		public int ExitCount { get; private set; }
-		public UtilityActionState TickState { get; set; } = UtilityActionState.Running;
+		public QuorumActionState TickState { get; set; } = QuorumActionState.Running;
 		
 		public void SetUtility(float utility)
 		{
 			_utility = utility;
 		}
 		
-		public override void Initialize(IUtilityContext context)
+		public override void Initialize(IQuorumContext context)
 		{
 			InitializeCount++;
 		}
 		
-		public override void Enter(IUtilityContext context)
+		public override void Enter(IQuorumContext context)
 		{
 			EnterCount++;
 		}
 		
-		public override UtilityActionState Tick(IUtilityContext context)
+		public override QuorumActionState Tick(IQuorumContext context)
 		{
 			TickCount++;
 			return TickState;
 		}
 		
-		public override float CalculateUtility(IUtilityContext context) => _utility;
+		public override float CalculateUtility(IQuorumContext context) => _utility;
 		
-		public override void Exit(IUtilityContext context)
+		public override void Exit(IQuorumContext context)
 		{
 			ExitCount++;
 		}

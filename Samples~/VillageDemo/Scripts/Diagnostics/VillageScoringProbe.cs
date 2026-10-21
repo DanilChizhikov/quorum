@@ -1,17 +1,17 @@
 using DTech.Blackboard;
-using DTech.UtilityAI.Diagnostics;
+using DTech.Quorum.Diagnostics;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Builds a villager context for the Scoring Matrix, where no scene and no agent exist.
 	/// Works because every villager score is read from the blackboard only (see VillageKeys).
 	/// No injector is returned: scoring never touches the world service.
 	/// </summary>
-	[CreateAssetMenu(menuName = "DTech/Utility AI/Samples/Village Scoring Probe", fileName = "VillageScoringProbe")]
-	public sealed class VillageScoringProbe : UtilityScoringProbe
+	[CreateAssetMenu(menuName = "DTech/Quorum/Samples/Village Scoring Probe", fileName = "VillageScoringProbe")]
+	public sealed class VillageScoringProbe : ScoringProbe
 	{
-		public override IUtilityContext CreateContext(RuntimeBlackboard blackboard) => new VillageContext(null, blackboard);
+		public override IQuorumContext CreateContext(RuntimeBlackboard blackboard) => new VillageContext(null, blackboard);
 	}
 }

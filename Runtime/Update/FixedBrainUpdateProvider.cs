@@ -1,17 +1,17 @@
 using System;
 
-namespace DTech.UtilityAI
+namespace DTech.Quorum
 {
 	internal sealed class FixedBrainUpdateProvider : BrainUpdateProvider
 	{
 		public override void AddUpdate(Action updateAction)
 		{
-			UtilityUpdateService.Instance.RegisterFixUpdate(updateAction);
+			BrainUpdateService.Instance.RegisterFixUpdate(updateAction);
 		}
 		
 		public override void RemoveUpdate(Action updateAction)
 		{
-			UtilityUpdateService.Instance.UnregisterFixUpdate(updateAction);
+			BrainUpdateService.Instance.UnregisterFixUpdate(updateAction);
 		}
 	}
 }

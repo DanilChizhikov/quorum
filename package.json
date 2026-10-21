@@ -1,16 +1,18 @@
 {
-    "name": "com.dtech.utilityai",
-    "displayName": "Utility AI",
+    "name": "com.dtech.quorum",
+    "displayName": "Quorum",
     "version": "1.0.0",
     "unity": "6000.0",
     "dependencies": {
         "com.dtech.blackboard": "1.1.1",
         "com.unity.profiling.core": "1.0.2"
     },
-    "description": "",
-    "changelogUrl": "https://github.com/DanilChizhikov/utilityai/releases/tag/v1.0.0",
-    "documentationUrl": "https://github.com/DanilChizhikov/utilityai/",
+    "description": "Utility AI for Unity: actions scored by considerations and response formulas, picked per brain, with DI adapters, a validator, a live debugger and a scoring matrix.",
+    "changelogUrl": "https://github.com/DanilChizhikov/quorum/releases/tag/v1.0.0",
+    "documentationUrl": "https://github.com/DanilChizhikov/quorum/",
     "keywords": [
+        "quorum",
+        "utility-ai",
         "utilityai",
         "behaviour",
         "ai"
@@ -19,8 +21,8 @@
     "author": "DTech",
     "repository": {
         "type": "git",
-        "url": "ssh://github.com:DanilChizhikov/utilityai.git",
-        "directory": "com.dtech"
+        "url": "ssh://github.com:DanilChizhikov/quorum.git",
+        "directory": "com.dtech.quorum"
     },
     "publishConfig": {
         "registry": "https://npm.pkg.github.com/@DanilChizhikov"

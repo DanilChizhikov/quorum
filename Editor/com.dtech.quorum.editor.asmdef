@@ -1,0 +1,20 @@
+{
+    "name": "com.dtech.quorum.editor",
+    "rootNamespace": "DTech",
+    "references": [
+        "com.dtech.quorum",
+        "Unity.Profiling.Core",
+        "com.dtech.blackboard"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

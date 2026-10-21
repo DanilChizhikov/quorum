@@ -1,8 +1,8 @@
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
-	public sealed class WolfBrain : UtilityBrain<WolfBrainConfig, WolfContext>
+	public sealed class WolfBrain : QuorumBrain<WolfBrainConfig, WolfContext>
 	{
-		public WolfBrain(WolfBrainConfig config, WolfContext context, IUtilityActionInjector injector)
+		public WolfBrain(WolfBrainConfig config, WolfContext context, IQuorumActionInjector injector)
 			: base(config, context, injector) { }
 	}
 }

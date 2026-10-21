@@ -1,10 +1,10 @@
 using System;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Tests.Performance
+namespace DTech.Quorum.Tests.Performance
 {
 	[Serializable]
-	internal sealed class PerfCurveConsideration : UtilityConsideration
+	internal sealed class PerfCurveConsideration : Consideration
 	{
 		[SerializeField]
 		private float _value = 0.5f;
@@ -25,7 +25,7 @@ namespace DTech.UtilityAI.Tests.Performance
 			_value = value;
 		}
 
-		public override float Evaluate(IUtilityContext context)
+		public override float Evaluate(IQuorumContext context)
 		{
 			if (_curve == null)
 			{

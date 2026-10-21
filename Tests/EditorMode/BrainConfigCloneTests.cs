@@ -2,22 +2,22 @@ using NUnit.Framework;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace DTech.UtilityAI.Tests.EditorMode
+namespace DTech.Quorum.Tests.EditorMode
 {
 	[TestFixture]
 	internal sealed class BrainConfigCloneTests
 	{
 		private TestBrainConfig _config;
 		private Blackboard.RuntimeBlackboard _blackboard;
-		private TestUtilityContext _context;
+		private TestQuorumContext _context;
 		
 		[SetUp]
 		public void Setup()
 		{
 			_config = ScriptableObject.CreateInstance<TestBrainConfig>();
-			_config.SetScoreAggregator(new MaxUtilityScoreAggregator());
+			_config.SetScoreAggregator(new MaxScoreAggregator());
 			_blackboard = new Blackboard.RuntimeBlackboard();
-			_context = new TestUtilityContext(new TestUtilityAgent(), _blackboard);
+			_context = new TestQuorumContext(new TestQuorumAgent(), _blackboard);
 		}
 		
 		[TearDown]
@@ -34,9 +34,9 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Brain_UsesSourceConfig_WithoutCloningIt()
 		{
-			_config.SetActions(new UtilityAction[] { new TestUtilityAction(1f) });
+			_config.SetActions(new QuorumAction[] { new TestQuorumAction(1f) });
 			
-			using var brain = new TestUtilityBrain(_config, _context);
+			using var brain = new TestQuorumBrain(_config, _context);
 
 			Assert.That(brain.SourceConfig, Is.SameAs(_config));
 		}
@@ -44,10 +44,10 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Brain_ActionsAreClones_NotSourceInstances()
 		{
-			var sourceAction = new TestUtilityAction(1f);
-			_config.SetActions(new UtilityAction[] { sourceAction });
+			var sourceAction = new TestQuorumAction(1f);
+			_config.SetActions(new QuorumAction[] { sourceAction });
 			
-			using var brain = new TestUtilityBrain(_config, _context);
+			using var brain = new TestQuorumBrain(_config, _context);
 			
 			Assert.That(brain.Actions.Count, Is.EqualTo(1));
 			Assert.That(brain.Actions[0], Is.Not.SameAs(sourceAction));
@@ -56,13 +56,13 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void TwoBrains_FromSameConfig_HaveIndependentActions()
 		{
-			_config.SetActions(new UtilityAction[] { new TestUtilityAction(1f) });
+			_config.SetActions(new QuorumAction[] { new TestQuorumAction(1f) });
 			
-			using var firstBrain = new TestUtilityBrain(_config, _context);
-			using var secondBrain = new TestUtilityBrain(_config, _context);
+			using var firstBrain = new TestQuorumBrain(_config, _context);
+			using var secondBrain = new TestQuorumBrain(_config, _context);
 			
-			var firstAction = (TestUtilityAction)firstBrain.Actions[0];
-			var secondAction = (TestUtilityAction)secondBrain.Actions[0];
+			var firstAction = (TestQuorumAction)firstBrain.Actions[0];
+			var secondAction = (TestQuorumAction)secondBrain.Actions[0];
 			firstAction.SetUtility(0.25f);
 			
 			Assert.That(firstAction, Is.Not.SameAs(secondAction));
@@ -72,11 +72,11 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Brain_MutatingClonedAction_DoesNotChangeSourceConfig()
 		{
-			var sourceAction = new TestUtilityAction(1f);
-			_config.SetActions(new UtilityAction[] { sourceAction });
+			var sourceAction = new TestQuorumAction(1f);
+			_config.SetActions(new QuorumAction[] { sourceAction });
 			
-			using var brain = new TestUtilityBrain(_config, _context);
-			var clonedAction = (TestUtilityAction)brain.Actions[0];
+			using var brain = new TestQuorumBrain(_config, _context);
+			var clonedAction = (TestQuorumAction)brain.Actions[0];
 			clonedAction.SetUtility(0.5f);
 			
 			Assert.That(sourceAction.Utility, Is.EqualTo(1f));
@@ -85,14 +85,14 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Brain_NestedConsideration_IsClonedAsWell()
 		{
-			var sourceConsideration = new TestUtilityConsideration(1f);
-			var sourceAction = new TestUtilityAction(1f);
+			var sourceConsideration = new TestFixedConsideration(1f);
+			var sourceAction = new TestQuorumAction(1f);
 			sourceAction.SetConsideration(sourceConsideration);
-			_config.SetActions(new UtilityAction[] { sourceAction });
+			_config.SetActions(new QuorumAction[] { sourceAction });
 			
-			using var brain = new TestUtilityBrain(_config, _context);
-			var clonedAction = (TestUtilityAction)brain.Actions[0];
-			var clonedConsideration = clonedAction.ActionConsideration as TestUtilityConsideration;
+			using var brain = new TestQuorumBrain(_config, _context);
+			var clonedAction = (TestQuorumAction)brain.Actions[0];
+			var clonedConsideration = clonedAction.ActionConsideration as TestFixedConsideration;
 			
 			Assert.That(clonedConsideration, Is.Not.Null);
 			Assert.That(clonedConsideration, Is.Not.SameAs(sourceConsideration));
@@ -105,8 +105,8 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Dispose_DoesNotDestroySourceConfig()
 		{
-			_config.SetActions(new UtilityAction[] { new TestUtilityAction(1f) });
-			var brain = new TestUtilityBrain(_config, _context);
+			_config.SetActions(new QuorumAction[] { new TestQuorumAction(1f) });
+			var brain = new TestQuorumBrain(_config, _context);
 
 			brain.Dispose();
 
@@ -116,13 +116,13 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Brain_DoesNotInitializeSourceConfigActions()
 		{
-			var sourceAction = new TestUtilityAction(1f);
-			_config.SetActions(new UtilityAction[] { sourceAction });
+			var sourceAction = new TestQuorumAction(1f);
+			_config.SetActions(new QuorumAction[] { sourceAction });
 
-			using var brain = new TestUtilityBrain(_config, _context);
+			using var brain = new TestQuorumBrain(_config, _context);
 
 			Assert.That(sourceAction.InitializeCount, Is.EqualTo(0));
-			Assert.That(((TestUtilityAction)brain.Actions[0]).InitializeCount, Is.EqualTo(1));
+			Assert.That(((TestQuorumAction)brain.Actions[0]).InitializeCount, Is.EqualTo(1));
 		}
 	}
 }

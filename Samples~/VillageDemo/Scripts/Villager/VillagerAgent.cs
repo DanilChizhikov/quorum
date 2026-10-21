@@ -1,7 +1,7 @@
 using DTech.Blackboard;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Owns one villager brain. Shows the whole lifecycle:
@@ -11,7 +11,7 @@ namespace DTech.UtilityAI.Samples.Village
 	/// asks the brain to re-score so a wolf can interrupt whatever the villager is doing.
 	/// </summary>
 	[RequireComponent(typeof(VillageMover))]
-	public sealed class VillagerAgent : MonoBehaviour, IUtilityAgent
+	public sealed class VillagerAgent : MonoBehaviour, IQuorumAgent
 	{
 		[SerializeField]
 		private VillagerBrainConfig _config = default;
@@ -43,7 +43,7 @@ namespace DTech.UtilityAI.Samples.Village
 		private bool _isStarted;
 
 		public VillageMover Mover => _mover;
-		public IUtilityBrain Brain => _brain;
+		public IQuorumBrain Brain => _brain;
 		public string CurrentActionLabel { get; private set; } = "-";
 		public int CarriedWood { get; set; }
 
@@ -201,7 +201,7 @@ namespace DTech.UtilityAI.Samples.Village
 
 		private void HandleActionChanged()
 		{
-			if (!_brain.TryGetCurrentAction(out IUtilityAction action))
+			if (!_brain.TryGetCurrentAction(out IQuorumAction action))
 			{
 				CurrentActionLabel = "-";
 				return;

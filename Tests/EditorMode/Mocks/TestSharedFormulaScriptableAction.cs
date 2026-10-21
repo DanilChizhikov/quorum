@@ -1,24 +1,24 @@
 using UnityEngine;
 
-namespace DTech.UtilityAI.Tests.EditorMode
+namespace DTech.Quorum.Tests.EditorMode
 {
-	internal sealed class TestSharedFormulaScriptableAction : ScriptableUtilityAction
+	internal sealed class TestSharedFormulaScriptableAction : ScriptableQuorumAction
 	{
 		[SerializeReference]
-		private UtilityConsideration _fallbackConsideration = default;
+		private Consideration _fallbackConsideration = default;
 
-		public void SetFallbackConsideration(UtilityConsideration consideration)
+		public void SetFallbackConsideration(Consideration consideration)
 		{
 			_fallbackConsideration = consideration;
 		}
 
-		public override void Enter(IUtilityContext context) { }
+		public override void Enter(IQuorumContext context) { }
 
-		public override UtilityActionState Tick(IUtilityContext context) => UtilityActionState.Running;
+		public override QuorumActionState Tick(IQuorumContext context) => QuorumActionState.Running;
 
-		public override float CalculateUtility(IUtilityContext context) =>
+		public override float CalculateUtility(IQuorumContext context) =>
 			_fallbackConsideration != null ? _fallbackConsideration.Evaluate(context) : 0f;
 
-		public override void Exit(IUtilityContext context) { }
+		public override void Exit(IQuorumContext context) { }
 	}
 }

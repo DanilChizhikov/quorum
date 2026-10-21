@@ -4,7 +4,7 @@ using DTech.Blackboard;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace DTech.UtilityAI.Tests.Performance
+namespace DTech.Quorum.Tests.Performance
 {
 	internal sealed class PerfBrainSet : IDisposable
 	{
@@ -18,13 +18,13 @@ namespace DTech.UtilityAI.Tests.Performance
 		private readonly PerfBrainConfig _config;
 		private readonly PerfScriptableAction[] _scriptableActions;
 		private readonly RuntimeBlackboard[] _blackboards;
-		private readonly PerfUtilityContext[] _contexts;
-		private readonly PerfUtilityBrain[] _brains;
+		private readonly PerfQuorumContext[] _contexts;
+		private readonly PerfQuorumBrain[] _brains;
 
 		public PerfBrainConfig Config => _config;
 		public int Count => _brains.Length;
-		public PerfUtilityBrain First => _brains[0];
-		public PerfUtilityBrain this[int index] => _brains[index];
+		public PerfQuorumBrain First => _brains[0];
+		public PerfQuorumBrain this[int index] => _brains[index];
 
 		private bool _isDisposed;
 
@@ -32,13 +32,13 @@ namespace DTech.UtilityAI.Tests.Performance
 			PerfBrainConfig config,
 			PerfScriptableAction[] scriptableActions,
 			RuntimeBlackboard[] blackboards,
-			PerfUtilityContext[] contexts)
+			PerfQuorumContext[] contexts)
 		{
 			_config = config;
 			_scriptableActions = scriptableActions;
 			_blackboards = blackboards;
 			_contexts = contexts;
-			_brains = new PerfUtilityBrain[contexts.Length];
+			_brains = new PerfQuorumBrain[contexts.Length];
 		}
 
 		public static PerfBrainSet Create(in PerfBrainSetup setup)
@@ -52,11 +52,11 @@ namespace DTech.UtilityAI.Tests.Performance
 		{
 			PerfBrainConfig config = CreateConfig(setup, out PerfScriptableAction[] scriptableActions);
 			var blackboards = new RuntimeBlackboard[setup.BrainCount];
-			var contexts = new PerfUtilityContext[setup.BrainCount];
+			var contexts = new PerfQuorumContext[setup.BrainCount];
 			for (int i = 0; i < setup.BrainCount; i++)
 			{
 				blackboards[i] = CreateBlackboard();
-				contexts[i] = new PerfUtilityContext(new PerfUtilityAgent(), blackboards[i]);
+				contexts[i] = new PerfQuorumContext(new PerfQuorumAgent(), blackboards[i]);
 			}
 
 			return new PerfBrainSet(config, scriptableActions, blackboards, contexts);
@@ -76,7 +76,7 @@ namespace DTech.UtilityAI.Tests.Performance
 		{
 			for (int i = 0; i < _brains.Length; i++)
 			{
-				_brains[i] = new PerfUtilityBrain(_config, _contexts[i]);
+				_brains[i] = new PerfQuorumBrain(_config, _contexts[i]);
 			}
 		}
 
@@ -129,7 +129,7 @@ namespace DTech.UtilityAI.Tests.Performance
 			}
 		}
 
-		public void SetScoreAggregator(UtilityScoreAggregator aggregator)
+		public void SetScoreAggregator(ScoreAggregator aggregator)
 		{
 			_config.SetScoreAggregator(aggregator);
 		}
@@ -159,27 +159,27 @@ namespace DTech.UtilityAI.Tests.Performance
 		private static PerfBrainConfig CreateConfig(in PerfBrainSetup setup, out PerfScriptableAction[] scriptableActions)
 		{
 			var config = ScriptableObject.CreateInstance<PerfBrainConfig>();
-			config.SetScoreAggregator(new MaxUtilityScoreAggregator());
-			var actions = new UtilityAction[setup.ActionCount];
+			config.SetScoreAggregator(new MaxScoreAggregator());
+			var actions = new QuorumAction[setup.ActionCount];
 			scriptableActions = setup.ActionKind == PerfActionKind.ScriptableReference
 				? new PerfScriptableAction[setup.ActionCount]
 				: Array.Empty<PerfScriptableAction>();
 
 			for (int i = 0; i < setup.ActionCount; i++)
 			{
-				UtilityConsideration consideration = CreateConsideration(setup, i);
+				Consideration consideration = CreateConsideration(setup, i);
 				if (setup.ActionKind == PerfActionKind.ScriptableReference)
 				{
 					var scriptableAction = ScriptableObject.CreateInstance<PerfScriptableAction>();
 					scriptableAction.SetConsideration(consideration);
 					scriptableActions[i] = scriptableAction;
-					actions[i] = new ScriptableUtilityActionReference(scriptableAction);
+					actions[i] = new ScriptableQuorumActionReference(scriptableAction);
 					continue;
 				}
 
-				UtilityAction action = setup.ActionKind == PerfActionKind.InlineCompleting
-					? (UtilityAction)new PerfCompletingUtilityAction()
-					: new PerfUtilityAction();
+				QuorumAction action = setup.ActionKind == PerfActionKind.InlineCompleting
+					? (QuorumAction)new PerfCompletingQuorumAction()
+					: new PerfQuorumAction();
 
 				action.SetConsideration(consideration);
 				actions[i] = action;
@@ -189,7 +189,7 @@ namespace DTech.UtilityAI.Tests.Performance
 			return config;
 		}
 
-		private static UtilityConsideration CreateConsideration(in PerfBrainSetup setup, int actionIndex)
+		private static Consideration CreateConsideration(in PerfBrainSetup setup, int actionIndex)
 		{
 			switch (setup.ConsiderationKind)
 			{
@@ -203,64 +203,64 @@ namespace DTech.UtilityAI.Tests.Performance
 				}
 				case PerfConsiderationKind.CompositeConstants:
 				{
-					var children = new UtilityConsideration[setup.ConsiderationCount];
+					var children = new Consideration[setup.ConsiderationCount];
 					for (int i = 0; i < children.Length; i++)
 					{
 						children[i] = new PerfConstantConsideration(GetScore(actionIndex + i, setup.ActionCount + children.Length));
 					}
 
-					return new CompositeUtilityConsideration(ConsiderationCombineMode.Multiply, children);
+					return new CompositeConsideration(ConsiderationCombineMode.Multiply, children);
 				}
 				case PerfConsiderationKind.CompositeBlackboard:
 				{
-					var children = new UtilityConsideration[setup.ConsiderationCount];
+					var children = new Consideration[setup.ConsiderationCount];
 					for (int i = 0; i < children.Length; i++)
 					{
 						children[i] = new PerfBlackboardConsideration(_floatKeys[(actionIndex + i) % _floatKeys.Length]);
 					}
 
-					return new CompositeUtilityConsideration(ConsiderationCombineMode.Multiply, children);
+					return new CompositeConsideration(ConsiderationCombineMode.Multiply, children);
 				}
 				case PerfConsiderationKind.CompositeBlackboardRaw:
 				{
-					var children = new UtilityConsideration[setup.ConsiderationCount];
+					var children = new Consideration[setup.ConsiderationCount];
 					for (int i = 0; i < children.Length; i++)
 					{
 						children[i] = new PerfBlackboardRawConsideration(_floatKeys[(actionIndex + i) % _floatKeys.Length]);
 					}
 
-					return new CompositeUtilityConsideration(ConsiderationCombineMode.Multiply, children);
+					return new CompositeConsideration(ConsiderationCombineMode.Multiply, children);
 				}
 				case PerfConsiderationKind.CompositeBlackboardCached:
 				{
-					var children = new UtilityConsideration[setup.ConsiderationCount];
+					var children = new Consideration[setup.ConsiderationCount];
 					for (int i = 0; i < children.Length; i++)
 					{
 						children[i] = new PerfBlackboardCachedConsideration(_floatKeys[(actionIndex + i) % _floatKeys.Length]);
 					}
 
-					return new CompositeUtilityConsideration(ConsiderationCombineMode.Multiply, children);
+					return new CompositeConsideration(ConsiderationCombineMode.Multiply, children);
 				}
 				case PerfConsiderationKind.CompositeFormula:
 				{
-					var children = new UtilityConsideration[setup.ConsiderationCount];
+					var children = new Consideration[setup.ConsiderationCount];
 					for (int i = 0; i < children.Length; i++)
 					{
 						string key = _floatKeys[(actionIndex + i) % _floatKeys.Length];
-						children[i] = new FormulaUtilityConsideration($"clamp01({key} * 2)");
+						children[i] = new FormulaConsideration($"clamp01({key} * 2)");
 					}
 
-					return new CompositeUtilityConsideration(ConsiderationCombineMode.Multiply, children);
+					return new CompositeConsideration(ConsiderationCombineMode.Multiply, children);
 				}
 				case PerfConsiderationKind.CompositeCurve:
 				{
-					var children = new UtilityConsideration[setup.ConsiderationCount];
+					var children = new Consideration[setup.ConsiderationCount];
 					for (int i = 0; i < children.Length; i++)
 					{
 						children[i] = new PerfCurveConsideration(GetScore(actionIndex + i, setup.ActionCount + children.Length));
 					}
 
-					return new CompositeUtilityConsideration(ConsiderationCombineMode.Multiply, children);
+					return new CompositeConsideration(ConsiderationCombineMode.Multiply, children);
 				}
 				default:
 				{

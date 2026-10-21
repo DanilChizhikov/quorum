@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Colours the renderers below it through a MaterialPropertyBlock, so the sample needs no material assets.

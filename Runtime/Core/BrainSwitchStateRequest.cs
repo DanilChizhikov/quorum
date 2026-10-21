@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using UnityEngine;
 
-namespace DTech.UtilityAI
+namespace DTech.Quorum
 {
 	/// <summary>
 	/// Delay timer of one pending switch request. The brain that owns it ticks it from its own

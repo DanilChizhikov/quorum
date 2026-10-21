@@ -1,4 +1,4 @@
-namespace DTech.UtilityAI.Tests.EditorMode
+namespace DTech.Quorum.Tests.EditorMode
 {
 	internal sealed class TestBrainConfig : BrainConfig { }
 }

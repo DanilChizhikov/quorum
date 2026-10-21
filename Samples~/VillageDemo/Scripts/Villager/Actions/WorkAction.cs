@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Multi-phase action: walk to a tree, chop, carry the log to the stockpile.
@@ -9,7 +9,7 @@ namespace DTech.UtilityAI.Samples.Village
 	/// Work resumes at the delivery phase - per-agent state lives on the cloned action and the agent.
 	/// </summary>
 	[Serializable]
-	[UtilityMenu("Village/Villager/Work")]
+	[QuorumMenu("Village/Villager/Work")]
 	public sealed class WorkAction : VillageAction<VillagerAgent, VillageContext>
 	{
 		private enum Phase : byte
@@ -44,11 +44,11 @@ namespace DTech.UtilityAI.Samples.Village
 			_phase = context.Agent.CarriedWood > 0 ? Phase.Deliver : Phase.GoToTree;
 		}
 
-		protected override UtilityActionState OnTick(VillageContext context)
+		protected override QuorumActionState OnTick(VillageContext context)
 		{
 			if (_tree == null || _stockpile == null)
 			{
-				return UtilityActionState.Failed;
+				return QuorumActionState.Failed;
 			}
 
 			VillagerAgent agent = context.Agent;
@@ -78,12 +78,12 @@ namespace DTech.UtilityAI.Samples.Village
 					{
 						World.AddWood(agent.CarriedWood);
 						agent.CarriedWood = 0;
-						return UtilityActionState.Completed;
+						return QuorumActionState.Completed;
 					}
 				} break;
 			}
 
-			return UtilityActionState.Running;
+			return QuorumActionState.Running;
 		}
 
 		protected override void Exit(VillageContext context)

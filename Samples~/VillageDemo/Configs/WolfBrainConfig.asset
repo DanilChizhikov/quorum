@@ -29,10 +29,10 @@ MonoBehaviour:
     - rid: -2
       type: {class: , ns: , asm: }
     - rid: 2636270898261787001
-      type: {class: RandomUtilityScoreAggregator, ns: DTech.UtilityAI, asm: com.dtech.utilityai}
+      type: {class: RandomScoreAggregator, ns: DTech.Quorum, asm: com.dtech.quorum}
       data: 
     - rid: 2636270898261787002
-      type: {class: HuntAction, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: HuntAction, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _consideration:
           rid: 2636270898261787005
@@ -44,7 +44,7 @@ MonoBehaviour:
         _catchDistance: 0.7
         _giveUpDistance: 12
     - rid: 2636270898261787003
-      type: {class: RestAction, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: RestAction, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _consideration:
           rid: 2636270898261787009
@@ -53,7 +53,7 @@ MonoBehaviour:
         _commitmentFloor: 0
         _restorePerSecond: 0.25
     - rid: 2636270898261787004
-      type: {class: PatrolAction, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: PatrolAction, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _consideration:
           rid: 2636270898261787010
@@ -63,7 +63,7 @@ MonoBehaviour:
         _speed: 1.8
         _staminaRestorePerSecond: 0.03
     - rid: 2636270898261787005
-      type: {class: CompositeUtilityConsideration, ns: DTech.UtilityAI, asm: com.dtech.utilityai}
+      type: {class: CompositeConsideration, ns: DTech.Quorum, asm: com.dtech.quorum}
       data:
         _combineMode: 0
         _considerations:
@@ -71,7 +71,7 @@ MonoBehaviour:
         - rid: 2636270898261787007
         - rid: 2636270898261787008
     - rid: 2636270898261787006
-      type: {class: BlackboardCurveConsideration, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _key: PreyDistance
         _min: 0
@@ -110,7 +110,7 @@ MonoBehaviour:
           m_PostInfinity: 2
           m_RotationOrder: 4
     - rid: 2636270898261787007
-      type: {class: BlackboardCurveConsideration, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _key: Stamina
         _min: 0
@@ -149,7 +149,7 @@ MonoBehaviour:
           m_PostInfinity: 2
           m_RotationOrder: 4
     - rid: 2636270898261787008
-      type: {class: BlackboardCurveConsideration, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _key: Satiation
         _min: 0
@@ -188,7 +188,7 @@ MonoBehaviour:
           m_PostInfinity: 2
           m_RotationOrder: 4
     - rid: 2636270898261787009
-      type: {class: BlackboardCurveConsideration, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _key: Stamina
         _min: 0
@@ -236,6 +236,6 @@ MonoBehaviour:
           m_PostInfinity: 2
           m_RotationOrder: 4
     - rid: 2636270898261787010
-      type: {class: ConstantConsideration, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: ConstantConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _value: 0.25

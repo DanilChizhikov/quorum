@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Straight-line movement on the XZ plane. The sample has no NavMesh on purpose:

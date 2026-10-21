@@ -1,14 +1,14 @@
 using System;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Fixed score. Used for fallback actions (Wander, Idle, Patrol) and as a weight inside a composite.
 	/// </summary>
 	[Serializable]
-	[UtilityMenu("Constant")]
-	public sealed class ConstantConsideration : UtilityConsideration
+	[QuorumMenu("Constant")]
+	public sealed class ConstantConsideration : Consideration
 	{
 		[SerializeField]
 		private float _value = 0.1f;
@@ -20,6 +20,6 @@ namespace DTech.UtilityAI.Samples.Village
 			_value = value;
 		}
 
-		public override float Evaluate(IUtilityContext context) => _value;
+		public override float Evaluate(IQuorumContext context) => _value;
 	}
 }

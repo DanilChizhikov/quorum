@@ -1,6 +1,6 @@
 using System;
 
-namespace DTech.UtilityAI
+namespace DTech.Quorum
 {
 	public interface IBrainUpdateProvider
 	{

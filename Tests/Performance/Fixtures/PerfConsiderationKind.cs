@@ -1,4 +1,4 @@
-namespace DTech.UtilityAI.Tests.Performance
+namespace DTech.Quorum.Tests.Performance
 {
 	internal enum PerfConsiderationKind : byte
 	{

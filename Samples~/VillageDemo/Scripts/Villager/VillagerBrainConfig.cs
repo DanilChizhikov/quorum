@@ -1,7 +1,7 @@
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
-	[CreateAssetMenu(menuName = "DTech/Utility AI/Samples/Villager Brain Config", fileName = "VillagerBrainConfig")]
+	[CreateAssetMenu(menuName = "DTech/Quorum/Samples/Villager Brain Config", fileName = "VillagerBrainConfig")]
 	public sealed class VillagerBrainConfig : BrainConfig { }
 }

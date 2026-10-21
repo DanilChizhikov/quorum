@@ -4,12 +4,12 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace DTech.UtilityAI.Editor
+namespace DTech.Quorum.Editor
 {
 	internal sealed class BrainConfigValidationWindow : EditorWindow
 	{
-		private const string MenuPath = "Window/DTech/Utility AI/Validator";
-		private const string WindowTitle = "Utility AI Validator";
+		private const string MenuPath = "Window/DTech/Quorum/Validator";
+		private const string WindowTitle = "Quorum Validator";
 		private const string StyleSheetName = "BrainConfigValidationWindow";
 		private const string ScanLabel = "Scan";
 		private const string FixAllLabel = "Fix All";
@@ -21,7 +21,7 @@ namespace DTech.UtilityAI.Editor
 		private const string MigrateTitle = "Migrate Renamed Types";
 		private const string MigrateOk = "Write Files";
 		private const string MigrateCancel = "Cancel";
-		private const string MigrateNothingMessage = "No asset references a former type name declared with [UtilityFormerlySerializedType].";
+		private const string MigrateNothingMessage = "No asset references a former type name declared with [QuorumFormerlySerializedType].";
 		private const string MigrateConfirmFormat = "These asset files will be rewritten on disk:\n\n{0}";
 
 		private readonly List<BrainConfigIssue> _issues = new();
@@ -114,20 +114,20 @@ namespace DTech.UtilityAI.Editor
 
 		private void Migrate()
 		{
-			List<UtilityTypeMigration> migrations = UtilitySerializedTypeMigrator.Collect();
+			List<TypeMigration> migrations = SerializedTypeMigrator.Collect();
 			if (migrations.Count <= 0)
 			{
 				EditorUtility.DisplayDialog(MigrateTitle, MigrateNothingMessage, MigrateCancel);
 				return;
 			}
 
-			string message = string.Format(MigrateConfirmFormat, UtilitySerializedTypeMigrator.Describe(migrations));
+			string message = string.Format(MigrateConfirmFormat, SerializedTypeMigrator.Describe(migrations));
 			if (!EditorUtility.DisplayDialog(MigrateTitle, message, MigrateOk, MigrateCancel))
 			{
 				return;
 			}
 
-			if (UtilitySerializedTypeMigrator.Apply(migrations) <= 0)
+			if (SerializedTypeMigrator.Apply(migrations) <= 0)
 			{
 				return;
 			}

@@ -1,4 +1,4 @@
-namespace DTech.UtilityAI
+namespace DTech.Quorum
 {
 	public enum SwitchActionType : byte
 	{

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Lets the HUD tint an agent with the colour of its current action.
@@ -24,10 +24,10 @@ namespace DTech.UtilityAI.Samples.Village
 	/// so the Scoring Matrix (which never enters actions) still shows the raw scores.
 	/// </remarks>
 	[Serializable]
-	public abstract class VillageAction<TAgent, TContext> : UtilityAction<TAgent, TContext>,
+	public abstract class VillageAction<TAgent, TContext> : QuorumAction<TAgent, TContext>,
 		IVillageActionVisual, IVillageWorldConsumer
-		where TAgent : IUtilityAgent
-		where TContext : UtilityContext<TAgent>
+		where TAgent : IQuorumAgent
+		where TContext : QuorumContext<TAgent>
 	{
 		[SerializeField]
 		private string _label = string.Empty;
@@ -57,26 +57,26 @@ namespace DTech.UtilityAI.Samples.Village
 			World = world;
 		}
 
-		public override void Enter(IUtilityContext context)
+		public override void Enter(IQuorumContext context)
 		{
 			_isRunning = true;
 			base.Enter(context);
 		}
 
-		public override UtilityActionState Tick(IUtilityContext context)
+		public override QuorumActionState Tick(IQuorumContext context)
 		{
-			UtilityActionState state = base.Tick(context);
-			_isRunning = state == UtilityActionState.Running;
+			QuorumActionState state = base.Tick(context);
+			_isRunning = state == QuorumActionState.Running;
 			return state;
 		}
 
-		public override float CalculateUtility(IUtilityContext context)
+		public override float CalculateUtility(IQuorumContext context)
 		{
 			float score = base.CalculateUtility(context);
 			return _isRunning ? Mathf.Max(score, _commitmentFloor) : score;
 		}
 
-		public override void Exit(IUtilityContext context)
+		public override void Exit(IQuorumContext context)
 		{
 			_isRunning = false;
 			base.Exit(context);
@@ -85,12 +85,12 @@ namespace DTech.UtilityAI.Samples.Village
 
 	internal static class VillageActionNames
 	{
-		public static bool TryGetVisual(IUtilityAction action, out IVillageActionVisual visual)
+		public static bool TryGetVisual(IQuorumAction action, out IVillageActionVisual visual)
 		{
 			visual = action switch
 			{
 				IVillageActionVisual actionVisual => actionVisual,
-				ScriptableUtilityActionReference { Action: IVillageActionVisual assetVisual } => assetVisual,
+				ScriptableQuorumActionReference { Action: IVillageActionVisual assetVisual } => assetVisual,
 				_ => null,
 			};
 

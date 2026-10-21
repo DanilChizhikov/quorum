@@ -2,7 +2,7 @@ using System.Globalization;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine.UIElements;
 
-namespace DTech.UtilityAI.Editor
+namespace DTech.Quorum.Editor
 {
 	internal abstract class BrainMapNode : Node
 	{

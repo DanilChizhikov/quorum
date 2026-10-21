@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using DTech.Blackboard;
 using UnityEngine;
 
-namespace DTech.UtilityAI
+namespace DTech.Quorum
 {
 	public abstract class BrainConfig : ScriptableObject
 	{
@@ -14,26 +14,26 @@ namespace DTech.UtilityAI
 		private SwitchActionType _switchActionType = SwitchActionType.OnActionFinished;
 
 		[SerializeReference]
-		private UtilityAction[] _actionEntries = Array.Empty<UtilityAction>();
+		private QuorumAction[] _actionEntries = Array.Empty<QuorumAction>();
 		
 		[SerializeReference]
-		private UtilityScoreAggregator _scoreAggregator = new MaxUtilityScoreAggregator();
+		private ScoreAggregator _scoreAggregator = new MaxScoreAggregator();
 		
 		[SerializeField]
 		private BlackboardAsset _blackboardSchema = default;
 		
 		public BrainUpdateType UpdateType => _updateType;
 		public SwitchActionType SwitchActionType => _switchActionType;
-		public IReadOnlyList<UtilityAction> Actions => _actionEntries;
-		public UtilityScoreAggregator ScoreAggregator => _scoreAggregator;
+		public IReadOnlyList<QuorumAction> Actions => _actionEntries;
+		public ScoreAggregator ScoreAggregator => _scoreAggregator;
 		public BlackboardAsset BlackboardSchema => _blackboardSchema;
 		
-		internal void SetActions(UtilityAction[] actions)
+		internal void SetActions(QuorumAction[] actions)
 		{
-			_actionEntries = actions ?? Array.Empty<UtilityAction>();
+			_actionEntries = actions ?? Array.Empty<QuorumAction>();
 		}
 		
-		internal void SetScoreAggregator(UtilityScoreAggregator scoreAggregator)
+		internal void SetScoreAggregator(ScoreAggregator scoreAggregator)
 		{
 			_scoreAggregator = scoreAggregator;
 		}

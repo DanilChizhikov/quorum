@@ -1,11 +1,11 @@
-namespace DTech.UtilityAI.Tests.Performance
+namespace DTech.Quorum.Tests.Performance
 {
-	internal sealed class PerfScriptableAction : ScriptableUtilityAction
+	internal sealed class PerfScriptableAction : ScriptableQuorumAction
 	{
-		public override void Enter(IUtilityContext context) { }
+		public override void Enter(IQuorumContext context) { }
 
-		public override UtilityActionState Tick(IUtilityContext context) => UtilityActionState.Running;
+		public override QuorumActionState Tick(IQuorumContext context) => QuorumActionState.Running;
 
-		public override void Exit(IUtilityContext context) { }
+		public override void Exit(IQuorumContext context) { }
 	}
 }

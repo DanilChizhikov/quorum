@@ -1,7 +1,7 @@
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Editor
+namespace DTech.Quorum.Editor
 {
 	internal static class BrainMapLayout
 	{

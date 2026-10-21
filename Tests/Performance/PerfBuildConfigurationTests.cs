@@ -1,6 +1,6 @@
 using NUnit.Framework;
 
-namespace DTech.UtilityAI.Tests.Performance
+namespace DTech.Quorum.Tests.Performance
 {
 	[TestFixture]
 	internal sealed class PerfBuildConfigurationTests
@@ -21,7 +21,7 @@ namespace DTech.UtilityAI.Tests.Performance
 			isEditor = false;
 #endif
 			bool hasBrainDiagnostics;
-#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
+#if UNITY_EDITOR || QUORUM_DIAGNOSTICS
 			hasBrainDiagnostics = true;
 #else
 			hasBrainDiagnostics = false;

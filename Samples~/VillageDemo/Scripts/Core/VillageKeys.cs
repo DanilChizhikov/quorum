@@ -1,4 +1,4 @@
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Blackboard variable names shared by agents (writers) and considerations (readers).

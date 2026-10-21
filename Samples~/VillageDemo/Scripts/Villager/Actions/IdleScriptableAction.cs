@@ -1,15 +1,15 @@
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// The ScriptableObject flavour of an action, added to the config through a
 	/// "Scriptable Action Reference" entry. One asset is shared by every brain and it is never injected,
 	/// so it must not keep per-agent state - this one only reads the context it is given.
-	/// Prefer plain UtilityAction classes; this path exists for stateless actions and older configs.
+	/// Prefer plain QuorumAction classes; this path exists for stateless actions and older configs.
 	/// </summary>
-	[CreateAssetMenu(menuName = "DTech/Utility AI/Samples/Idle Action", fileName = "IdleAction")]
-	public sealed class IdleScriptableAction : ScriptableUtilityAction<VillagerAgent, VillageContext>, IVillageActionVisual
+	[CreateAssetMenu(menuName = "DTech/Quorum/Samples/Idle Action", fileName = "IdleAction")]
+	public sealed class IdleScriptableAction : ScriptableQuorumAction<VillagerAgent, VillageContext>, IVillageActionVisual
 	{
 		[SerializeField]
 		private float _turnSpeed = 60f;
@@ -25,10 +25,10 @@ namespace DTech.UtilityAI.Samples.Village
 
 		protected override void Enter(VillageContext context) { }
 
-		protected override UtilityActionState OnTick(VillageContext context)
+		protected override QuorumActionState OnTick(VillageContext context)
 		{
 			context.Agent.transform.Rotate(0f, _turnSpeed * Time.deltaTime, 0f);
-			return UtilityActionState.Running;
+			return QuorumActionState.Running;
 		}
 
 		protected override float CalculateUtility(VillageContext context) =>

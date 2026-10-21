@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 
-namespace DTech.UtilityAI.Editor
+namespace DTech.Quorum.Editor
 {
 	internal static class BrainConfigValidationScanner
 	{

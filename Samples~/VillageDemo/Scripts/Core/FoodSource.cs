@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Berry bush. Disappears when eaten; VillageWorld grows new ones over time.

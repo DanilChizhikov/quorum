@@ -1,12 +1,12 @@
-namespace DTech.UtilityAI.Editor
+namespace DTech.Quorum.Editor
 {
 	internal sealed class ActionMapNode : BrainMapNode
 	{
 		private const string CurrentClass = "uai-map__node--current";
 
-		public IUtilityAction Action { get; }
+		public IQuorumAction Action { get; }
 
-		public ActionMapNode(IUtilityAction action) : base(UtilityActionLabel.Get(action), true, true)
+		public ActionMapNode(IQuorumAction action) : base(ActionLabel.Get(action), true, true)
 		{
 			Action = action;
 			AddToClassList("uai-map__node");

@@ -1,10 +1,10 @@
 using System;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Tests.Performance
+namespace DTech.Quorum.Tests.Performance
 {
 	[Serializable]
-	internal sealed class PerfConstantConsideration : UtilityConsideration
+	internal sealed class PerfConstantConsideration : Consideration
 	{
 		[SerializeField]
 		private float _score;
@@ -16,6 +16,6 @@ namespace DTech.UtilityAI.Tests.Performance
 			_score = score;
 		}
 
-		public override float Evaluate(IUtilityContext context) => _score;
+		public override float Evaluate(IQuorumContext context) => _score;
 	}
 }

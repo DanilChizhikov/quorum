@@ -1,11 +1,11 @@
 using DTech.Blackboard;
-using DTech.UtilityAI.Diagnostics;
+using DTech.Quorum.Diagnostics;
 
-namespace DTech.UtilityAI.Tests.EditorMode
+namespace DTech.Quorum.Tests.EditorMode
 {
-	internal sealed class TestScoringProbe : UtilityScoringProbe
+	internal sealed class TestScoringProbe : ScoringProbe
 	{
-		public override IUtilityContext CreateContext(RuntimeBlackboard blackboard) =>
-			new TestUtilityContext(new TestUtilityAgent(), blackboard);
+		public override IQuorumContext CreateContext(RuntimeBlackboard blackboard) =>
+			new TestQuorumContext(new TestQuorumAgent(), blackboard);
 	}
 }

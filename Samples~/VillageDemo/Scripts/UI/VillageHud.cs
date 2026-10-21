@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// IMGUI overlay: current action above every agent, needs bars, spawn buttons and time scale.
@@ -96,7 +96,7 @@ namespace DTech.UtilityAI.Samples.Village
 		{
 			GUILayout.BeginArea(new Rect(10f, 10f, PanelWidth, Screen.height - 20f));
 			GUILayout.BeginVertical(GUI.skin.box);
-			GUILayout.Label("<b>Utility AI - Village Demo</b>", _titleStyle);
+			GUILayout.Label("<b>Quorum - Village Demo</b>", _titleStyle);
 			GUILayout.Label($"Wood: {_world.Wood}   Food: {_world.FoodCount}");
 			GUILayout.Label($"Villagers: {_world.Villagers.Count}   Wolves: {_world.Wolves.Count}");
 
@@ -128,7 +128,7 @@ namespace DTech.UtilityAI.Samples.Village
 			Time.timeScale = GUILayout.HorizontalSlider(Time.timeScale, 0.25f, 4f);
 			GUILayout.Space(6f);
 			GUILayout.Label("Bars: hunger (orange), energy (blue), stamina (yellow).");
-			GUILayout.Label("Window/DTech/Utility AI/Debugger - live scores.\nWindow/DTech/Utility AI/Brain Map - config graph.");
+			GUILayout.Label("Window/DTech/Quorum/Debugger - live scores.\nWindow/DTech/Quorum/Brain Map - config graph.");
 			GUILayout.EndVertical();
 			GUILayout.EndArea();
 		}

@@ -2,7 +2,7 @@ using System;
 using DTech.Blackboard;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Response curve over a float blackboard variable: the value is remapped from [min, max] to [0, 1]
@@ -11,8 +11,8 @@ namespace DTech.UtilityAI.Samples.Village
 	/// a lookup by name costs far more than the whole rest of the score, so never do it in Evaluate.
 	/// </summary>
 	[Serializable]
-	[UtilityMenu("Blackboard/Float Curve")]
-	public sealed class BlackboardCurveConsideration : UtilityConsideration
+	[QuorumMenu("Blackboard/Float Curve")]
+	public sealed class BlackboardCurveConsideration : Consideration
 	{
 		[SerializeField]
 		private string _key = string.Empty;
@@ -38,7 +38,7 @@ namespace DTech.UtilityAI.Samples.Village
 			_curve = curve;
 		}
 
-		public override void Initialize(IUtilityContext context)
+		public override void Initialize(IQuorumContext context)
 		{
 			RuntimeBlackboard blackboard = context.Blackboard;
 			if (blackboard == null || !blackboard.TryGetVariable(_key, out BlackboardVariable<float> variable))
@@ -50,7 +50,7 @@ namespace DTech.UtilityAI.Samples.Village
 			_variable = variable;
 		}
 
-		public override float Evaluate(IUtilityContext context)
+		public override float Evaluate(IQuorumContext context)
 		{
 			if (_variable == null || _curve == null)
 			{

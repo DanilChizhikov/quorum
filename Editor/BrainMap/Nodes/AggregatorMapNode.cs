@@ -1,11 +1,11 @@
-namespace DTech.UtilityAI.Editor
+namespace DTech.Quorum.Editor
 {
 	internal sealed class AggregatorMapNode : BrainMapNode
 	{
 		private const string EmptyLabel = "No Score Aggregator";
 
-		public AggregatorMapNode(UtilityScoreAggregator aggregator)
-			: base(aggregator != null ? UtilityTypeRegistry.GetDisplayName(aggregator.GetType()) : EmptyLabel, true, false)
+		public AggregatorMapNode(ScoreAggregator aggregator)
+			: base(aggregator != null ? TypeRegistry.GetDisplayName(aggregator.GetType()) : EmptyLabel, true, false)
 		{
 			AddToClassList("uai-map__node");
 			AddToClassList("uai-map__node--aggregator");

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine.LowLevel;
 
-namespace DTech.UtilityAI.Tests.Performance
+namespace DTech.Quorum.Tests.Performance
 {
 	internal sealed class PerfUpdateServiceScope : IDisposable
 	{
@@ -12,7 +12,7 @@ namespace DTech.UtilityAI.Tests.Performance
 		public PerfUpdateServiceScope()
 		{
 			_originalLoop = PlayerLoop.GetCurrentPlayerLoop();
-			_ = UtilityUpdateService.Instance;
+			_ = BrainUpdateService.Instance;
 		}
 
 		public static bool TryGetDispatcher(Type phaseType, out PlayerLoopSystem.UpdateFunction dispatcher)
@@ -35,7 +35,7 @@ namespace DTech.UtilityAI.Tests.Performance
 				for (int j = 0; j < phase.subSystemList.Length; j++)
 				{
 					PlayerLoopSystem system = phase.subSystemList[j];
-					if (system.type != typeof(UtilityUpdateService))
+					if (system.type != typeof(BrainUpdateService))
 					{
 						continue;
 					}
@@ -56,7 +56,7 @@ namespace DTech.UtilityAI.Tests.Performance
 			}
 
 			_isDisposed = true;
-			UtilityUpdateService.Instance.Dispose();
+			BrainUpdateService.Instance.Dispose();
 			PlayerLoop.SetPlayerLoop(_originalLoop);
 		}
 	}

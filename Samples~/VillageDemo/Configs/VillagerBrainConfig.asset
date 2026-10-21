@@ -32,10 +32,10 @@ MonoBehaviour:
     - rid: -2
       type: {class: , ns: , asm: }
     - rid: 2636270898261786984
-      type: {class: MaxUtilityScoreAggregator, ns: DTech.UtilityAI, asm: com.dtech.utilityai}
+      type: {class: MaxScoreAggregator, ns: DTech.Quorum, asm: com.dtech.quorum}
       data: 
     - rid: 2636270898261786985
-      type: {class: FleeAction, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: FleeAction, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _consideration:
           rid: 2636270898261786991
@@ -46,7 +46,7 @@ MonoBehaviour:
         _safeDistance: 8
         _stepDistance: 3
     - rid: 2636270898261786986
-      type: {class: EatAction, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: EatAction, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _consideration:
           rid: 2636270898261786992
@@ -55,7 +55,7 @@ MonoBehaviour:
         _commitmentFloor: 0.4
         _speed: 2
     - rid: 2636270898261786987
-      type: {class: SleepAction, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: SleepAction, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _consideration:
           rid: 2636270898261786995
@@ -65,7 +65,7 @@ MonoBehaviour:
         _speed: 1.8
         _restorePerSecond: 0.2
     - rid: 2636270898261786988
-      type: {class: WorkAction, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: WorkAction, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _consideration:
           rid: 2636270898261786996
@@ -76,7 +76,7 @@ MonoBehaviour:
         _chopDuration: 2.5
         _energyCostPerSecond: 0.05
     - rid: 2636270898261786989
-      type: {class: WanderAction, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: WanderAction, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _consideration:
           rid: 2636270898261787000
@@ -86,13 +86,13 @@ MonoBehaviour:
         _speed: 1.4
         _radius: 4
     - rid: 2636270898261786990
-      type: {class: ScriptableUtilityActionReference, ns: DTech.UtilityAI, asm: com.dtech.utilityai}
+      type: {class: ScriptableQuorumActionReference, ns: DTech.Quorum, asm: com.dtech.quorum}
       data:
         _consideration:
           rid: -2
         _action: {fileID: 11400000, guid: 62d9fd64a90c0437ca28102952a212a4, type: 2}
     - rid: 2636270898261786991
-      type: {class: BlackboardCurveConsideration, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _key: ThreatDistance
         _min: 0
@@ -131,14 +131,14 @@ MonoBehaviour:
           m_PostInfinity: 2
           m_RotationOrder: 4
     - rid: 2636270898261786992
-      type: {class: CompositeUtilityConsideration, ns: DTech.UtilityAI, asm: com.dtech.utilityai}
+      type: {class: CompositeConsideration, ns: DTech.Quorum, asm: com.dtech.quorum}
       data:
         _combineMode: 0
         _considerations:
         - rid: 2636270898261786993
         - rid: 2636270898261786994
     - rid: 2636270898261786993
-      type: {class: BlackboardCurveConsideration, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _key: Hunger
         _min: 0
@@ -186,13 +186,13 @@ MonoBehaviour:
           m_PostInfinity: 2
           m_RotationOrder: 4
     - rid: 2636270898261786994
-      type: {class: BlackboardBoolConsideration, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: BlackboardBoolConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _key: FoodAvailable
         _whenTrue: 1
         _whenFalse: 0
     - rid: 2636270898261786995
-      type: {class: BlackboardCurveConsideration, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _key: Energy
         _min: 0
@@ -240,7 +240,7 @@ MonoBehaviour:
           m_PostInfinity: 2
           m_RotationOrder: 4
     - rid: 2636270898261786996
-      type: {class: CompositeUtilityConsideration, ns: DTech.UtilityAI, asm: com.dtech.utilityai}
+      type: {class: CompositeConsideration, ns: DTech.Quorum, asm: com.dtech.quorum}
       data:
         _combineMode: 0
         _considerations:
@@ -248,7 +248,7 @@ MonoBehaviour:
         - rid: 2636270898261786998
         - rid: 2636270898261786999
     - rid: 2636270898261786997
-      type: {class: BlackboardCurveConsideration, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _key: Energy
         _min: 0
@@ -287,7 +287,7 @@ MonoBehaviour:
           m_PostInfinity: 2
           m_RotationOrder: 4
     - rid: 2636270898261786998
-      type: {class: BlackboardCurveConsideration, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _key: Hunger
         _min: 0
@@ -326,10 +326,10 @@ MonoBehaviour:
           m_PostInfinity: 2
           m_RotationOrder: 4
     - rid: 2636270898261786999
-      type: {class: ConstantConsideration, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: ConstantConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _value: 0.6
     - rid: 2636270898261787000
-      type: {class: ConstantConsideration, ns: DTech.UtilityAI.Samples.Village, asm: DTech.UtilityAI.Samples.Village}
+      type: {class: ConstantConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
       data:
         _value: 0.15

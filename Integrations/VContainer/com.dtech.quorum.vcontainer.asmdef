@@ -1,0 +1,25 @@
+{
+    "name": "com.dtech.quorum.vcontainer",
+    "rootNamespace": "DTech",
+    "references": [
+        "com.dtech.quorum",
+        "VContainer"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "QUORUM_VCONTAINER_ENABLED"
+    ],
+    "versionDefines": [
+        {
+            "name": "jp.hadashikick.vcontainer",
+            "expression": "0.0.0",
+            "define": "QUORUM_VCONTAINER_ENABLED"
+        }
+    ],
+    "noEngineReferences": false
+}

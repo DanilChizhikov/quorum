@@ -2,13 +2,13 @@ using System;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Fallback: stroll to a random nearby point. Scored by a low constant so anything useful beats it.
 	/// </summary>
 	[Serializable]
-	[UtilityMenu("Village/Villager/Wander")]
+	[QuorumMenu("Village/Villager/Wander")]
 	public sealed class WanderAction : VillageAction<VillagerAgent, VillageContext>
 	{
 		[SerializeField]
@@ -27,8 +27,8 @@ namespace DTech.UtilityAI.Samples.Village
 			_target = World.ClampToBounds(context.Agent.transform.position + new Vector3(offset.x, 0f, offset.y));
 		}
 
-		protected override UtilityActionState OnTick(VillageContext context) =>
-			context.Agent.Mover.MoveTo(_target, _speed) ? UtilityActionState.Completed : UtilityActionState.Running;
+		protected override QuorumActionState OnTick(VillageContext context) =>
+			context.Agent.Mover.MoveTo(_target, _speed) ? QuorumActionState.Completed : QuorumActionState.Running;
 
 		protected override void Exit(VillageContext context) { }
 	}

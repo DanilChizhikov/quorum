@@ -1,11 +1,11 @@
-namespace DTech.UtilityAI.Tests.EditorMode
+namespace DTech.Quorum.Tests.EditorMode
 {
-	internal sealed class TestScorelessScriptableAction : ScriptableUtilityAction
+	internal sealed class TestScorelessScriptableAction : ScriptableQuorumAction
 	{
-		public override void Enter(IUtilityContext context) { }
+		public override void Enter(IQuorumContext context) { }
 
-		public override UtilityActionState Tick(IUtilityContext context) => UtilityActionState.Running;
+		public override QuorumActionState Tick(IQuorumContext context) => QuorumActionState.Running;
 
-		public override void Exit(IUtilityContext context) { }
+		public override void Exit(IQuorumContext context) { }
 	}
 }

@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Globalization;
-using DTech.UtilityAI.Diagnostics;
+using DTech.Quorum.Diagnostics;
 using UnityEditor;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Editor
+namespace DTech.Quorum.Editor
 {
 	[CustomEditor(typeof(BrainConfig), true)]
 	public class BrainConfigEditor : UnityEditor.Editor
@@ -22,10 +22,10 @@ namespace DTech.UtilityAI.Editor
 		private const float DebuggerButtonWidth = 140f;
 
 		private readonly List<BrainConfigIssue> _issues = new();
-		private readonly List<IUtilityBrainDebugInfo> _brains = new();
-		private readonly Dictionary<int, UtilityScoreSampler> _samplers = new();
+		private readonly List<IBrainDebugInfo> _brains = new();
+		private readonly Dictionary<int, ScoreSampler> _samplers = new();
 
-		private UtilityActionListDrawProvider _actionsDrawProvider;
+		private ActionListDrawProvider _actionsDrawProvider;
 		private SerializedProperty _updateTypeProperty;
 		private SerializedProperty _switchActionTypeProperty;
 		private SerializedProperty _scoreAggregatorProperty;
@@ -65,35 +65,35 @@ namespace DTech.UtilityAI.Editor
 				_ => MessageType.Info,
 			};
 
-		private void DrawLiveBrain(IUtilityBrainDebugInfo brain, int index)
+		private void DrawLiveBrain(IBrainDebugInfo brain, int index)
 		{
 			string state = brain.IsEnabled ? "Enabled" : "Disabled";
 			EditorGUILayout.LabelField(
 				$"#{index}",
-				$"{state}    current: {UtilityActionLabel.Get(brain.CurrentAction)} ({brain.CurrentState})");
+				$"{state}    current: {ActionLabel.Get(brain.CurrentAction)} ({brain.CurrentState})");
 
-			UtilityScoreSampler sampler = GetSampler(brain.DebugToken);
+			ScoreSampler sampler = GetSampler(brain.DebugToken);
 			sampler.Sample(brain, false);
-			IReadOnlyList<IUtilityAction> actions = brain.Actions;
+			IReadOnlyList<IQuorumAction> actions = brain.Actions;
 			using (new EditorGUI.IndentLevelScope())
 			{
 				for (int i = 0; i < actions.Count; i++)
 				{
 					string error = sampler.GetError(i);
 					string value = error ?? sampler.GetScore(i).ToString(ScoreFormat, CultureInfo.InvariantCulture);
-					EditorGUILayout.LabelField(UtilityActionLabel.Get(actions[i]), value);
+					EditorGUILayout.LabelField(ActionLabel.Get(actions[i]), value);
 				}
 			}
 		}
 
-		private UtilityScoreSampler GetSampler(int token)
+		private ScoreSampler GetSampler(int token)
 		{
-			if (_samplers.TryGetValue(token, out UtilityScoreSampler sampler))
+			if (_samplers.TryGetValue(token, out ScoreSampler sampler))
 			{
 				return sampler;
 			}
 
-			sampler = new UtilityScoreSampler();
+			sampler = new ScoreSampler();
 			_samplers.Add(token, sampler);
 			return sampler;
 		}
@@ -105,15 +105,15 @@ namespace DTech.UtilityAI.Editor
 			_scoreAggregatorProperty = serializedObject.FindProperty(ScoreAggregatorPropertyName);
 			_blackboardSchemaProperty = serializedObject.FindProperty(BlackboardSchemaPropertyName);
 			SerializedProperty actionsProperty = serializedObject.FindProperty(ActionsPropertyName);
-			_actionsDrawProvider = new UtilityActionListDrawProvider(serializedObject, actionsProperty);
+			_actionsDrawProvider = new ActionListDrawProvider(serializedObject, actionsProperty);
 			_issuesDirty = true;
 			Undo.undoRedoPerformed += OnUndoRedoPerformed;
-			UtilityBrainDebugRegistry.AddObserver();
+			BrainDebugRegistry.AddObserver();
 		}
 
 		private void OnDisable()
 		{
-			UtilityBrainDebugRegistry.RemoveObserver();
+			BrainDebugRegistry.RemoveObserver();
 			Undo.undoRedoPerformed -= OnUndoRedoPerformed;
 			_samplers.Clear();
 			_brains.Clear();
@@ -182,11 +182,11 @@ namespace DTech.UtilityAI.Editor
 				return;
 			}
 
-			UtilityBrainDebugRegistry.GetBrainsNonAlloc(_brains);
+			BrainDebugRegistry.GetBrainsNonAlloc(_brains);
 			int shownCount = 0;
 			for (int i = 0; i < _brains.Count; i++)
 			{
-				IUtilityBrainDebugInfo brain = _brains[i];
+				IBrainDebugInfo brain = _brains[i];
 				if (brain.SourceConfig != config)
 				{
 					continue;
@@ -212,7 +212,7 @@ namespace DTech.UtilityAI.Editor
 				GUILayout.FlexibleSpace();
 				if (GUILayout.Button(OpenDebuggerLabel, GUILayout.Width(DebuggerButtonWidth)))
 				{
-					UtilityBrainDebuggerWindow.Open(config);
+					BrainDebuggerWindow.Open(config);
 				}
 			}
 

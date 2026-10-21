@@ -1,4 +1,4 @@
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Implemented by actions that need the world service.
@@ -9,12 +9,12 @@ namespace DTech.UtilityAI.Samples.Village
 	}
 
 	/// <summary>
-	/// Minimal <see cref="IUtilityActionInjector"/>: the brain calls <see cref="Inject"/> once for every
+	/// Minimal <see cref="IQuorumActionInjector"/>: the brain calls <see cref="Inject"/> once for every
 	/// cloned action before <c>Initialize</c>. In a real project use the shipped adapters instead -
-	/// <c>Container.BindUtilityActionInjector()</c> (Zenject) or <c>builder.RegisterUtilityActionInjector()</c>
+	/// <c>Container.BindQuorumActionInjector()</c> (Zenject) or <c>builder.RegisterQuorumActionInjector()</c>
 	/// (VContainer) - and mark the action fields with <c>[Inject]</c>.
 	/// </summary>
-	public sealed class VillageActionInjector : IUtilityActionInjector
+	public sealed class VillageActionInjector : IQuorumActionInjector
 	{
 		private readonly VillageWorld _world;
 

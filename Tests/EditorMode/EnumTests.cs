@@ -1,26 +1,26 @@
 using NUnit.Framework;
 
-namespace DTech.UtilityAI.Tests.EditorMode
+namespace DTech.Quorum.Tests.EditorMode
 {
 	[TestFixture]
 	internal sealed class EnumTests
 	{
 		[Test]
-		public void UtilityActionState_Running_HasCorrectValue()
+		public void QuorumActionState_Running_HasCorrectValue()
 		{
-			Assert.That((int)UtilityActionState.Running, Is.EqualTo(0));
+			Assert.That((int)QuorumActionState.Running, Is.EqualTo(0));
 		}
 		
 		[Test]
-		public void UtilityActionState_Completed_HasCorrectValue()
+		public void QuorumActionState_Completed_HasCorrectValue()
 		{
-			Assert.That((int)UtilityActionState.Completed, Is.EqualTo(1));
+			Assert.That((int)QuorumActionState.Completed, Is.EqualTo(1));
 		}
 		
 		[Test]
-		public void UtilityActionState_Failed_HasCorrectValue()
+		public void QuorumActionState_Failed_HasCorrectValue()
 		{
-			Assert.That((int)UtilityActionState.Failed, Is.EqualTo(2));
+			Assert.That((int)QuorumActionState.Failed, Is.EqualTo(2));
 		}
 		
 		[Test]
@@ -54,20 +54,20 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		}
 		
 		[Test]
-		public void UtilityActionState_CanBeUsedInSwitchStatement()
+		public void QuorumActionState_CanBeUsedInSwitchStatement()
 		{
-			UtilityActionState state = UtilityActionState.Running;
+			QuorumActionState state = QuorumActionState.Running;
 			int result = -1;
 			
 			switch (state)
 			{
-				case UtilityActionState.Running:
+				case QuorumActionState.Running:
 					result = 0;
 					break;
-				case UtilityActionState.Completed:
+				case QuorumActionState.Completed:
 					result = 1;
 					break;
-				case UtilityActionState.Failed:
+				case QuorumActionState.Failed:
 					result = 2;
 					break;
 			}
@@ -98,13 +98,13 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		}
 		
 		[Test]
-		public void UtilityActionState_AllValues_AreUnique()
+		public void QuorumActionState_AllValues_AreUnique()
 		{
 			var values = new[]
 			{
-				(int)UtilityActionState.Running,
-				(int)UtilityActionState.Completed,
-				(int)UtilityActionState.Failed
+				(int)QuorumActionState.Running,
+				(int)QuorumActionState.Completed,
+				(int)QuorumActionState.Failed
 			};
 			
 			var uniqueValues = new System.Collections.Generic.HashSet<int>(values);

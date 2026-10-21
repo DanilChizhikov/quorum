@@ -1,7 +1,7 @@
 using System;
 using UnityEngine.LowLevel;
 
-namespace DTech.UtilityAI
+namespace DTech.Quorum
 {
 	internal static class PlayerLoopExtensions
 	{

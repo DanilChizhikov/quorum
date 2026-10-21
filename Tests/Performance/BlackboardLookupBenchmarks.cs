@@ -2,7 +2,7 @@ using DTech.Blackboard;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
 
-namespace DTech.UtilityAI.Tests.Performance
+namespace DTech.Quorum.Tests.Performance
 {
 	[TestFixture]
 	internal sealed class BlackboardLookupBenchmarks

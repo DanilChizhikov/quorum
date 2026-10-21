@@ -1,8 +1,8 @@
 using DTech.Blackboard;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
-	public sealed class WolfContext : UtilityContext<WolfAgent>
+	public sealed class WolfContext : QuorumContext<WolfAgent>
 	{
 		public WolfContext(WolfAgent agent, RuntimeBlackboard blackboard) : base(agent, blackboard) { }
 	}

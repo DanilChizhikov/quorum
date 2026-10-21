@@ -1,0 +1,17 @@
+{
+    "name": "DTech.Quorum.Samples.Village",
+    "rootNamespace": "DTech.Quorum.Samples.Village",
+    "references": [
+        "com.dtech.quorum",
+        "com.dtech.blackboard"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

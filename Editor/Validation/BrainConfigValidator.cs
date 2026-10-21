@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 
-namespace DTech.UtilityAI.Editor
+namespace DTech.Quorum.Editor
 {
 	internal static class BrainConfigValidator
 	{
@@ -52,7 +52,7 @@ namespace DTech.UtilityAI.Editor
 
 		private static void ValidateActions(BrainConfig config, List<BrainConfigIssue> issues)
 		{
-			IReadOnlyList<UtilityAction> actions = config.Actions;
+			IReadOnlyList<QuorumAction> actions = config.Actions;
 			if (actions == null || actions.Count <= 0)
 			{
 				issues.Add(new BrainConfigIssue(
@@ -68,7 +68,7 @@ namespace DTech.UtilityAI.Editor
 			var actionTypes = new HashSet<Type>();
 			for (int i = 0; i < actions.Count; i++)
 			{
-				UtilityAction action = actions[i];
+				QuorumAction action = actions[i];
 				if (action == null)
 				{
 					issues.Add(new BrainConfigIssue(
@@ -83,7 +83,7 @@ namespace DTech.UtilityAI.Editor
 
 				ValidateScriptableReference(config, issues, action, i);
 				ValidateScoreSource(config, issues, action, i);
-				if (action is ScriptableUtilityActionReference || actionTypes.Add(action.GetType()))
+				if (action is ScriptableQuorumActionReference || actionTypes.Add(action.GetType()))
 				{
 					continue;
 				}
@@ -97,9 +97,9 @@ namespace DTech.UtilityAI.Editor
 			}
 		}
 
-		private static void ValidateScriptableReference(BrainConfig config, List<BrainConfigIssue> issues, UtilityAction action, int index)
+		private static void ValidateScriptableReference(BrainConfig config, List<BrainConfigIssue> issues, QuorumAction action, int index)
 		{
-			if (action is not ScriptableUtilityActionReference reference || reference.Action != null)
+			if (action is not ScriptableQuorumActionReference reference || reference.Action != null)
 			{
 				return;
 			}
@@ -108,13 +108,13 @@ namespace DTech.UtilityAI.Editor
 				config,
 				BrainConfigIssueSeverity.Error,
 				BrainConfigIssueCode.EmptyScriptableActionReference,
-				$"Action {index} references no ScriptableUtilityAction asset and always fails.",
+				$"Action {index} references no ScriptableQuorumAction asset and always fails.",
 				ActionsPropertyPath));
 		}
 
-		private static void ValidateScoreSource(BrainConfig config, List<BrainConfigIssue> issues, UtilityAction action, int index)
+		private static void ValidateScoreSource(BrainConfig config, List<BrainConfigIssue> issues, QuorumAction action, int index)
 		{
-			object scoreSource = action is ScriptableUtilityActionReference reference ? reference.Action : action;
+			object scoreSource = action is ScriptableQuorumActionReference reference ? reference.Action : action;
 			if (scoreSource == null || GetConsideration(scoreSource) != null || HasCustomUtility(scoreSource.GetType()))
 			{
 				return;
@@ -156,7 +156,7 @@ namespace DTech.UtilityAI.Editor
 		private static void ValidateGraph(BrainConfig config, List<BrainConfigIssue> issues)
 		{
 			var visited = new HashSet<object>();
-			IReadOnlyList<UtilityAction> actions = config.Actions;
+			IReadOnlyList<QuorumAction> actions = config.Actions;
 			if (actions != null)
 			{
 				for (int i = 0; i < actions.Count; i++)
@@ -178,11 +178,11 @@ namespace DTech.UtilityAI.Editor
 			ValidateComposite(config, issues, node);
 			ValidateFormulas(config, issues, node);
 			Type type = node.GetType();
-			IReadOnlyList<FieldInfo> fields = UtilitySerializableFieldCache.GetFields(type);
+			IReadOnlyList<FieldInfo> fields = SerializableFieldCache.GetFields(type);
 			for (int i = 0; i < fields.Count; i++)
 			{
 				FieldInfo field = fields[i];
-				if (!UtilitySerializableFieldCache.IsManagedReference(field))
+				if (!SerializableFieldCache.IsManagedReference(field))
 				{
 					continue;
 				}
@@ -193,7 +193,7 @@ namespace DTech.UtilityAI.Editor
 					continue;
 				}
 
-				if (!UtilitySerializableFieldCache.IsCollection(field.FieldType))
+				if (!SerializableFieldCache.IsCollection(field.FieldType))
 				{
 					ValidateNode(config, issues, value, visited);
 					continue;
@@ -213,7 +213,7 @@ namespace DTech.UtilityAI.Editor
 							config,
 							BrainConfigIssueSeverity.Warning,
 							BrainConfigIssueCode.NullManagedReferenceElement,
-							$"{UtilityTypeRegistry.GetDisplayName(type)} has an empty entry {elementIndex} in {field.Name}."));
+							$"{TypeRegistry.GetDisplayName(type)} has an empty entry {elementIndex} in {field.Name}."));
 
 						continue;
 					}
@@ -226,27 +226,27 @@ namespace DTech.UtilityAI.Editor
 		private static void ValidateFormulas(BrainConfig config, List<BrainConfigIssue> issues, object node)
 		{
 			Type type = node.GetType();
-			IReadOnlyList<FieldInfo> fields = UtilitySerializableFieldCache.GetFields(type);
+			IReadOnlyList<FieldInfo> fields = SerializableFieldCache.GetFields(type);
 			for (int i = 0; i < fields.Count; i++)
 			{
 				FieldInfo field = fields[i];
-				if (field.FieldType != typeof(string) || !Attribute.IsDefined(field, typeof(UtilityFormulaAttribute)))
+				if (field.FieldType != typeof(string) || !Attribute.IsDefined(field, typeof(FormulaAttribute)))
 				{
 					continue;
 				}
 
-				if (!UtilityFormulaCompiler.TryCompile(field.GetValue(node) as string, out UtilityFormulaProgram program, out UtilityFormulaError error))
+				if (!FormulaCompiler.TryCompile(field.GetValue(node) as string, out FormulaProgram program, out FormulaError error))
 				{
 					issues.Add(new BrainConfigIssue(
 						config,
 						BrainConfigIssueSeverity.Error,
 						BrainConfigIssueCode.InvalidFormula,
-						$"{UtilityTypeRegistry.GetDisplayName(type)} has an invalid formula in {field.Name}: {error}."));
+						$"{TypeRegistry.GetDisplayName(type)} has an invalid formula in {field.Name}: {error}."));
 
 					continue;
 				}
 
-				string unknown = UtilityFormulaSchema.GetUnknownNames(config.BlackboardSchema, program.VariableNames);
+				string unknown = FormulaSchema.GetUnknownNames(config.BlackboardSchema, program.VariableNames);
 				if (string.IsNullOrEmpty(unknown))
 				{
 					continue;
@@ -256,18 +256,18 @@ namespace DTech.UtilityAI.Editor
 					config,
 					BrainConfigIssueSeverity.Warning,
 					BrainConfigIssueCode.UnknownFormulaVariable,
-					$"{UtilityTypeRegistry.GetDisplayName(type)} reads names in {field.Name} that the blackboard schema does not have: {unknown}."));
+					$"{TypeRegistry.GetDisplayName(type)} reads names in {field.Name} that the blackboard schema does not have: {unknown}."));
 			}
 		}
 
 		private static void ValidateComposite(BrainConfig config, List<BrainConfigIssue> issues, object node)
 		{
-			if (node is not CompositeUtilityConsideration)
+			if (node is not CompositeConsideration)
 			{
 				return;
 			}
 
-			FieldInfo field = UtilitySerializableFieldCache.GetField(node.GetType(), CompositeChildrenFieldName);
+			FieldInfo field = SerializableFieldCache.GetField(node.GetType(), CompositeChildrenFieldName);
 			int count = field?.GetValue(node) is IList list ? list.Count : 0;
 			if (count <= 0)
 			{
@@ -296,7 +296,7 @@ namespace DTech.UtilityAI.Editor
 
 		private static void ValidateSharedAssetFormulas(BrainConfig config, List<BrainConfigIssue> issues)
 		{
-			IReadOnlyList<UtilityAction> actions = config.Actions;
+			IReadOnlyList<QuorumAction> actions = config.Actions;
 			if (actions == null)
 			{
 				return;
@@ -304,7 +304,7 @@ namespace DTech.UtilityAI.Editor
 
 			for (int i = 0; i < actions.Count; i++)
 			{
-				if (actions[i] is not ScriptableUtilityActionReference reference || reference.Action == null)
+				if (actions[i] is not ScriptableQuorumActionReference reference || reference.Action == null)
 				{
 					continue;
 				}
@@ -332,16 +332,16 @@ namespace DTech.UtilityAI.Editor
 				return false;
 			}
 
-			if (node is FormulaUtilityConsideration)
+			if (node is FormulaConsideration)
 			{
 				return true;
 			}
 
-			IReadOnlyList<FieldInfo> fields = UtilitySerializableFieldCache.GetFields(node.GetType());
+			IReadOnlyList<FieldInfo> fields = SerializableFieldCache.GetFields(node.GetType());
 			for (int i = 0; i < fields.Count; i++)
 			{
 				FieldInfo field = fields[i];
-				if (!UtilitySerializableFieldCache.IsManagedReference(field))
+				if (!SerializableFieldCache.IsManagedReference(field))
 				{
 					continue;
 				}
@@ -352,7 +352,7 @@ namespace DTech.UtilityAI.Editor
 					continue;
 				}
 
-				if (!UtilitySerializableFieldCache.IsCollection(field.FieldType))
+				if (!SerializableFieldCache.IsCollection(field.FieldType))
 				{
 					if (ContainsFormula(value, visited))
 					{
@@ -381,7 +381,7 @@ namespace DTech.UtilityAI.Editor
 
 		private static void ValidateContextTypes(BrainConfig config, List<BrainConfigIssue> issues)
 		{
-			IReadOnlyList<UtilityAction> actions = config.Actions;
+			IReadOnlyList<QuorumAction> actions = config.Actions;
 			if (actions == null || actions.Count <= 1)
 			{
 				return;
@@ -390,7 +390,7 @@ namespace DTech.UtilityAI.Editor
 			var contextTypes = new Dictionary<Type, int>();
 			for (int i = 0; i < actions.Count; i++)
 			{
-				UtilityAction action = actions[i];
+				QuorumAction action = actions[i];
 				Type contextType = action != null ? GetContextType(action) : null;
 				if (contextType == null || contextTypes.ContainsKey(contextType))
 				{
@@ -445,15 +445,15 @@ namespace DTech.UtilityAI.Editor
 			return false;
 		}
 
-		private static Type GetContextType(UtilityAction action)
+		private static Type GetContextType(QuorumAction action)
 		{
-			if (action is not ScriptableUtilityActionReference reference)
+			if (action is not ScriptableQuorumActionReference reference)
 			{
-				return GetContextArgument(action.GetType(), typeof(UtilityAction<,>));
+				return GetContextArgument(action.GetType(), typeof(QuorumAction<,>));
 			}
 
 			return reference.Action != null
-				? GetContextArgument(reference.Action.GetType(), typeof(ScriptableUtilityAction<,>))
+				? GetContextArgument(reference.Action.GetType(), typeof(ScriptableQuorumAction<,>))
 				: null;
 		}
 
@@ -470,10 +470,10 @@ namespace DTech.UtilityAI.Editor
 			return null;
 		}
 
-		private static UtilityConsideration GetConsideration(object scoreSource)
+		private static Consideration GetConsideration(object scoreSource)
 		{
-			FieldInfo field = UtilitySerializableFieldCache.GetField(scoreSource.GetType(), ConsiderationFieldName);
-			return field?.GetValue(scoreSource) as UtilityConsideration;
+			FieldInfo field = SerializableFieldCache.GetField(scoreSource.GetType(), ConsiderationFieldName);
+			return field?.GetValue(scoreSource) as Consideration;
 		}
 
 		private static bool HasCustomUtility(Type type)
@@ -502,7 +502,7 @@ namespace DTech.UtilityAI.Editor
 
 		private static bool IsFrameworkActionType(Type type)
 		{
-			if (type == typeof(UtilityAction) || type == typeof(ScriptableUtilityAction))
+			if (type == typeof(QuorumAction) || type == typeof(ScriptableQuorumAction))
 			{
 				return true;
 			}
@@ -513,15 +513,15 @@ namespace DTech.UtilityAI.Editor
 			}
 
 			Type definition = type.GetGenericTypeDefinition();
-			return definition == typeof(UtilityAction<,>) || definition == typeof(ScriptableUtilityAction<,>);
+			return definition == typeof(QuorumAction<,>) || definition == typeof(ScriptableQuorumAction<,>);
 		}
 
-		private static string GetActionName(UtilityAction action) =>
-			UtilityTypeRegistry.GetDisplayName(action.GetType());
+		private static string GetActionName(QuorumAction action) =>
+			TypeRegistry.GetDisplayName(action.GetType());
 
 		private static string GetScoreSourceName(object scoreSource) =>
-			scoreSource is ScriptableUtilityAction asset
+			scoreSource is ScriptableQuorumAction asset
 				? asset.name
-				: UtilityTypeRegistry.GetDisplayName(scoreSource.GetType());
+				: TypeRegistry.GetDisplayName(scoreSource.GetType());
 	}
 }

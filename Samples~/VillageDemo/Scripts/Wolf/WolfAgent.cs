@@ -1,17 +1,17 @@
 using DTech.Blackboard;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Second brain type. Differences from the villager, on purpose:
 	/// the config uses <see cref="BrainUpdateType.Custom"/>, so this component ticks the brain itself
 	/// (pause it, slow it down, or tick it from a network loop - your call), and it never re-scores on a
 	/// timer: the wolf commits to an action until it completes or fails. The config also uses the
-	/// RandomUtilityScoreAggregator, so higher scores are only more likely, not certain.
+	/// RandomScoreAggregator, so higher scores are only more likely, not certain.
 	/// </summary>
 	[RequireComponent(typeof(VillageMover))]
-	public sealed class WolfAgent : MonoBehaviour, IUtilityAgent
+	public sealed class WolfAgent : MonoBehaviour, IQuorumAgent
 	{
 		[SerializeField]
 		private WolfBrainConfig _config = default;
@@ -35,7 +35,7 @@ namespace DTech.UtilityAI.Samples.Village
 		private bool _isStarted;
 
 		public VillageMover Mover => _mover;
-		public IUtilityBrain Brain => _brain;
+		public IQuorumBrain Brain => _brain;
 		public string CurrentActionLabel { get; private set; } = "-";
 
 		public float Stamina
@@ -163,7 +163,7 @@ namespace DTech.UtilityAI.Samples.Village
 
 		private void HandleActionChanged()
 		{
-			if (!_brain.TryGetCurrentAction(out IUtilityAction action))
+			if (!_brain.TryGetCurrentAction(out IQuorumAction action))
 			{
 				CurrentActionLabel = "-";
 				return;

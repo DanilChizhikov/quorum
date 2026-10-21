@@ -1,7 +1,7 @@
 using System;
 using NUnit.Framework;
 
-namespace DTech.UtilityAI.Tests.Performance
+namespace DTech.Quorum.Tests.Performance
 {
 	[TestFixture]
 	internal sealed class MemoryAllocationTests
@@ -62,7 +62,7 @@ namespace DTech.UtilityAI.Tests.Performance
 			}
 
 			_set = CreateSet(1, PerfConsiderationKind.Constant);
-			PerfUtilityBrain brain = _set.First;
+			PerfQuorumBrain brain = _set.First;
 			Action cycle = () =>
 			{
 				brain.Enable();
@@ -89,7 +89,7 @@ namespace DTech.UtilityAI.Tests.Performance
 
 			_set = CreateSet(1, PerfConsiderationKind.Constant);
 			_set.EnableAll();
-			PerfUtilityBrain brain = _set.First;
+			PerfQuorumBrain brain = _set.First;
 			Action request = () => brain.RequestSwitchAction();
 			Warmup(request);
 
@@ -111,7 +111,7 @@ namespace DTech.UtilityAI.Tests.Performance
 
 			_set = CreateSet(1, PerfConsiderationKind.CompositeBlackboardCached);
 			_set.EnableAll();
-			PerfUtilityBrain brain = _set.First;
+			PerfQuorumBrain brain = _set.First;
 			Action request = () => brain.RequestSwitchAction();
 			Warmup(request);
 
@@ -133,7 +133,7 @@ namespace DTech.UtilityAI.Tests.Performance
 
 			_set = CreateSet(1, PerfConsiderationKind.CompositeFormula);
 			_set.EnableAll();
-			PerfUtilityBrain brain = _set.First;
+			PerfQuorumBrain brain = _set.First;
 			Action request = () => brain.RequestSwitchAction();
 			Warmup(request);
 

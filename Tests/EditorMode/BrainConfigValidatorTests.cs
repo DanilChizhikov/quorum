@@ -1,17 +1,17 @@
 using System.Collections.Generic;
 using System.Text;
 using DTech.Blackboard;
-using DTech.UtilityAI.Editor;
+using DTech.Quorum.Editor;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Tests.EditorMode
+namespace DTech.Quorum.Tests.EditorMode
 {
 	internal sealed class BrainConfigValidatorTests
 	{
 		private readonly List<BrainConfig> _configs = new();
 		private readonly List<BlackboardAsset> _blackboards = new();
-		private readonly List<ScriptableUtilityAction> _actionAssets = new();
+		private readonly List<ScriptableQuorumAction> _actionAssets = new();
 
 		[TearDown]
 		public void TearDown()
@@ -80,7 +80,7 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Validate_ActionWithoutScoreSource_ReportsWarning()
 		{
-			BrainConfig config = CreateConfig(new TestScorelessUtilityAction());
+			BrainConfig config = CreateConfig(new TestScorelessQuorumAction());
 
 			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
 
@@ -90,7 +90,7 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Validate_EmptyScriptableActionReference_ReportsError()
 		{
-			BrainConfig config = CreateConfig(new ScriptableUtilityActionReference(null));
+			BrainConfig config = CreateConfig(new ScriptableQuorumActionReference(null));
 
 			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
 
@@ -101,7 +101,7 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		public void Validate_ReferenceToScorelessScriptableAction_ReportsWarning()
 		{
 			TestScorelessScriptableAction asset = CreateActionAsset<TestScorelessScriptableAction>();
-			BrainConfig config = CreateConfig(new ScriptableUtilityActionReference(asset));
+			BrainConfig config = CreateConfig(new ScriptableQuorumActionReference(asset));
 
 			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
 
@@ -113,7 +113,7 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		{
 			TestScriptableAction asset = CreateActionAsset<TestScriptableAction>();
 			asset.SetUtility(0.5f);
-			BrainConfig config = CreateConfig(new ScriptableUtilityActionReference(asset));
+			BrainConfig config = CreateConfig(new ScriptableQuorumActionReference(asset));
 
 			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
 
@@ -124,8 +124,8 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		public void Validate_BaseAndDerivedContextActions_ReportsNoMismatch()
 		{
 			BrainConfig config = CreateConfig(
-				new TestBaseContextUtilityAction(),
-				new TestDerivedContextUtilityAction());
+				new TestBaseContextQuorumAction(),
+				new TestDerivedContextQuorumAction());
 
 			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
 
@@ -136,8 +136,8 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		public void Validate_UnrelatedContextActions_ReportsError()
 		{
 			BrainConfig config = CreateConfig(
-				new TestBaseContextUtilityAction(),
-				new TestOtherContextUtilityAction());
+				new TestBaseContextQuorumAction(),
+				new TestOtherContextQuorumAction());
 
 			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
 
@@ -148,8 +148,8 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		public void Validate_FormulaOutsideConsiderationOfSharedAsset_ReportsError()
 		{
 			TestSharedFormulaScriptableAction asset = CreateActionAsset<TestSharedFormulaScriptableAction>();
-			asset.SetFallbackConsideration(new FormulaUtilityConsideration("clamp01(Hunger / 100)"));
-			BrainConfig config = CreateConfig(new ScriptableUtilityActionReference(asset));
+			asset.SetFallbackConsideration(new FormulaConsideration("clamp01(Hunger / 100)"));
+			BrainConfig config = CreateConfig(new ScriptableQuorumActionReference(asset));
 
 			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
 
@@ -159,8 +159,8 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Validate_CompositeWithoutChildren_ReportsWarning()
 		{
-			var action = new TestUtilityAction(1f);
-			action.SetConsideration(new CompositeUtilityConsideration());
+			var action = new TestQuorumAction(1f);
+			action.SetConsideration(new CompositeConsideration());
 			BrainConfig config = CreateConfig(action);
 
 			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
@@ -171,10 +171,10 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Validate_CompositeWithSingleChild_ReportsInfo()
 		{
-			var action = new TestUtilityAction(1f);
-			action.SetConsideration(new CompositeUtilityConsideration(
+			var action = new TestQuorumAction(1f);
+			action.SetConsideration(new CompositeConsideration(
 				ConsiderationCombineMode.Multiply,
-				new TestUtilityConsideration(1f)));
+				new TestFixedConsideration(1f)));
 
 			BrainConfig config = CreateConfig(action);
 
@@ -186,10 +186,10 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Validate_NullChildInComposite_ReportsWarning()
 		{
-			var action = new TestUtilityAction(1f);
-			action.SetConsideration(new CompositeUtilityConsideration(
+			var action = new TestQuorumAction(1f);
+			action.SetConsideration(new CompositeConsideration(
 				ConsiderationCombineMode.Multiply,
-				new TestUtilityConsideration(1f),
+				new TestFixedConsideration(1f),
 				null));
 
 			BrainConfig config = CreateConfig(action);
@@ -217,14 +217,14 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
 
 			Assert.AreEqual(1, BrainConfigIssueFixer.FixAll(issues));
-			Assert.IsInstanceOf<MaxUtilityScoreAggregator>(config.ScoreAggregator);
+			Assert.IsInstanceOf<MaxScoreAggregator>(config.ScoreAggregator);
 		}
 
 		[Test]
 		public void Validate_InvalidFormula_ReportsError()
 		{
-			var action = new TestUtilityAction(0.5f);
-			action.SetConsideration(new FormulaUtilityConsideration("1 +"));
+			var action = new TestQuorumAction(0.5f);
+			action.SetConsideration(new FormulaConsideration("1 +"));
 			BrainConfig config = CreateConfig(action);
 
 			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
@@ -235,11 +235,11 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Validate_InvalidFormulaInsideComposite_ReportsError()
 		{
-			var action = new TestUtilityAction(0.5f);
-			action.SetConsideration(new CompositeUtilityConsideration(
+			var action = new TestQuorumAction(0.5f);
+			action.SetConsideration(new CompositeConsideration(
 				ConsiderationCombineMode.Multiply,
-				new TestUtilityConsideration(0.5f),
-				new FormulaUtilityConsideration("clamp01(")));
+				new TestFixedConsideration(0.5f),
+				new FormulaConsideration("clamp01(")));
 
 			BrainConfig config = CreateConfig(action);
 
@@ -251,8 +251,8 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Validate_ValidFormula_ReportsNoFormulaIssue()
 		{
-			var action = new TestUtilityAction(0.5f);
-			action.SetConsideration(new FormulaUtilityConsideration("clamp01(Hunger / 100)"));
+			var action = new TestQuorumAction(0.5f);
+			action.SetConsideration(new FormulaConsideration("clamp01(Hunger / 100)"));
 			BrainConfig config = CreateConfig(action);
 
 			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
@@ -269,8 +269,8 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Validate_FormulaNameMissingFromSchema_ReportsWarning()
 		{
-			var action = new TestUtilityAction(0.5f);
-			action.SetConsideration(new FormulaUtilityConsideration("clamp01(Hungr / 100)"));
+			var action = new TestQuorumAction(0.5f);
+			action.SetConsideration(new FormulaConsideration("clamp01(Hungr / 100)"));
 			BrainConfig config = CreateConfig(action);
 			config.SetBlackboardSchema(CreateSchema("Hunger"));
 
@@ -282,8 +282,8 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Validate_FormulaNameOnSchema_ReportsNoWarning()
 		{
-			var action = new TestUtilityAction(0.5f);
-			action.SetConsideration(new FormulaUtilityConsideration("clamp01(hunger / 100)"));
+			var action = new TestQuorumAction(0.5f);
+			action.SetConsideration(new FormulaConsideration("clamp01(hunger / 100)"));
 			BrainConfig config = CreateConfig(action);
 			config.SetBlackboardSchema(CreateSchema("Hunger"));
 
@@ -295,8 +295,8 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[Test]
 		public void Validate_WithoutSchema_ReportsNoUnknownNameWarning()
 		{
-			var action = new TestUtilityAction(0.5f);
-			action.SetConsideration(new FormulaUtilityConsideration("clamp01(Hungr / 100)"));
+			var action = new TestQuorumAction(0.5f);
+			action.SetConsideration(new FormulaConsideration("clamp01(Hungr / 100)"));
 			BrainConfig config = CreateConfig(action);
 
 			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
@@ -310,10 +310,10 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			Assert.IsFalse(BrainConfigIssueFixer.CanFix(BrainConfigIssueCode.UnknownFormulaVariable));
 		}
 
-		private static TestUtilityAction CreateScoredAction()
+		private static TestQuorumAction CreateScoredAction()
 		{
-			var action = new TestUtilityAction(0.5f);
-			action.SetConsideration(new TestUtilityConsideration(0.5f));
+			var action = new TestQuorumAction(0.5f);
+			action.SetConsideration(new TestFixedConsideration(0.5f));
 			return action;
 		}
 
@@ -373,14 +373,14 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		}
 
 		private T CreateActionAsset<T>()
-			where T : ScriptableUtilityAction
+			where T : ScriptableQuorumAction
 		{
 			var asset = ScriptableObject.CreateInstance<T>();
 			_actionAssets.Add(asset);
 			return asset;
 		}
 
-		private BrainConfig CreateConfig(params UtilityAction[] actions)
+		private BrainConfig CreateConfig(params QuorumAction[] actions)
 		{
 			var config = ScriptableObject.CreateInstance<TestBrainConfig>();
 			config.SetActions(actions);

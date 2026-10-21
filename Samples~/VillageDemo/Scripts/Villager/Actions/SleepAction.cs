@@ -1,14 +1,14 @@
 using System;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Go to the closest bed and sleep until fully rested. Its commitment floor keeps the villager in bed
 	/// at 60% energy when Work starts scoring higher - a close wolf (Flee) or real hunger (Eat) still wins.
 	/// </summary>
 	[Serializable]
-	[UtilityMenu("Village/Villager/Sleep")]
+	[QuorumMenu("Village/Villager/Sleep")]
 	public sealed class SleepAction : VillageAction<VillagerAgent, VillageContext>
 	{
 		[SerializeField]
@@ -26,21 +26,21 @@ namespace DTech.UtilityAI.Samples.Village
 			World.TryGetNearestPoint(VillagePointKind.Bed, context.Agent.transform.position, out _bed);
 		}
 
-		protected override UtilityActionState OnTick(VillageContext context)
+		protected override QuorumActionState OnTick(VillageContext context)
 		{
 			if (_bed == null)
 			{
-				return UtilityActionState.Failed;
+				return QuorumActionState.Failed;
 			}
 
 			VillagerAgent agent = context.Agent;
 			if (!agent.Mover.MoveTo(_bed.Position, _speed, 0.3f))
 			{
-				return UtilityActionState.Running;
+				return QuorumActionState.Running;
 			}
 
 			agent.Energy += _restorePerSecond * Time.deltaTime;
-			return agent.Energy >= 1f ? UtilityActionState.Completed : UtilityActionState.Running;
+			return agent.Energy >= 1f ? QuorumActionState.Completed : QuorumActionState.Running;
 		}
 
 		protected override void Exit(VillageContext context)

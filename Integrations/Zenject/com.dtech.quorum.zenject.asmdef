@@ -1,0 +1,30 @@
+{
+    "name": "com.dtech.quorum.zenject",
+    "rootNamespace": "DTech",
+    "references": [
+        "com.dtech.quorum",
+        "Zenject"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "QUORUM_ZENJECT_ENABLED"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.svermeulen.extenject",
+            "expression": "0.0.0",
+            "define": "QUORUM_ZENJECT_ENABLED"
+        },
+        {
+            "name": "com.modesttree.zenject",
+            "expression": "0.0.0",
+            "define": "QUORUM_ZENJECT_ENABLED"
+        }
+    ],
+    "noEngineReferences": false
+}

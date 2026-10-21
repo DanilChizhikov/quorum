@@ -2,10 +2,10 @@ using System;
 using DTech.Blackboard;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Tests.Performance
+namespace DTech.Quorum.Tests.Performance
 {
 	[Serializable]
-	internal sealed class PerfBlackboardRawConsideration : UtilityConsideration
+	internal sealed class PerfBlackboardRawConsideration : Consideration
 	{
 		[SerializeField]
 		private string _key = string.Empty;
@@ -17,7 +17,7 @@ namespace DTech.UtilityAI.Tests.Performance
 			_key = key;
 		}
 
-		public override float Evaluate(IUtilityContext context)
+		public override float Evaluate(IQuorumContext context)
 		{
 			RuntimeBlackboard blackboard = context.Blackboard;
 			if (blackboard == null || !blackboard.TryGetVariable(_key, out BlackboardVariable<float> variable))

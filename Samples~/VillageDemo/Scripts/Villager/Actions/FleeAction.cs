@@ -1,14 +1,14 @@
 using System;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Run away from the closest wolf until it is far enough. Its score peaks at 1, above every other
 	/// villager action, so the periodic re-score in VillagerAgent interrupts anything when a wolf gets close.
 	/// </summary>
 	[Serializable]
-	[UtilityMenu("Village/Villager/Flee")]
+	[QuorumMenu("Village/Villager/Flee")]
 	public sealed class FleeAction : VillageAction<VillagerAgent, VillageContext>
 	{
 		[SerializeField]
@@ -24,20 +24,20 @@ namespace DTech.UtilityAI.Samples.Village
 
 		protected override void Enter(VillageContext context) { }
 
-		protected override UtilityActionState OnTick(VillageContext context)
+		protected override QuorumActionState OnTick(VillageContext context)
 		{
 			VillagerAgent agent = context.Agent;
 			Vector3 position = agent.transform.position;
 			if (!World.TryGetNearestWolf(position, out WolfAgent wolf))
 			{
-				return UtilityActionState.Completed;
+				return QuorumActionState.Completed;
 			}
 
 			Vector3 away = position - wolf.transform.position;
 			away.y = 0f;
 			if (away.magnitude >= _safeDistance)
 			{
-				return UtilityActionState.Completed;
+				return QuorumActionState.Completed;
 			}
 
 			Vector3 direction = away.sqrMagnitude > 0.0001f ? away.normalized : Vector3.forward;
@@ -49,7 +49,7 @@ namespace DTech.UtilityAI.Samples.Village
 			}
 
 			agent.Mover.MoveTo(target, _speed);
-			return UtilityActionState.Running;
+			return QuorumActionState.Running;
 		}
 
 		protected override void Exit(VillageContext context) { }

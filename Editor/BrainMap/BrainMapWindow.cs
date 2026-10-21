@@ -1,19 +1,19 @@
 using System;
 using System.Collections.Generic;
-using DTech.UtilityAI.Diagnostics;
+using DTech.Quorum.Diagnostics;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
-namespace DTech.UtilityAI.Editor
+namespace DTech.Quorum.Editor
 {
 	internal sealed class BrainMapWindow : EditorWindow
 	{
-		public const string MenuPath = "Window/DTech/Utility AI/Brain Map";
+		public const string MenuPath = "Window/DTech/Quorum/Brain Map";
 
-		private const string WindowTitle = "Utility AI Brain Map";
+		private const string WindowTitle = "Quorum Brain Map";
 		private const string StyleSheetName = "BrainMapWindow";
 		private const string ConfigLabel = "Config";
 		private const string RebuildLabel = "Rebuild";
@@ -22,14 +22,14 @@ namespace DTech.UtilityAI.Editor
 		private const string EmptyMessage = "Select a BrainConfig asset to map it.";
 		private const int RefreshIntervalMs = 100;
 
-		private readonly List<IUtilityBrainDebugInfo> _brains = new();
-		private readonly List<IUtilityAction> _actions = new();
+		private readonly List<IBrainDebugInfo> _brains = new();
+		private readonly List<IQuorumAction> _actions = new();
 
 		private BrainMapGraphView _graphView;
 		private ObjectField _configField;
 		private Label _status;
 		private BrainConfig _builtConfig;
-		private WeakReference<IUtilityBrainDebugInfo> _builtBrain;
+		private WeakReference<IBrainDebugInfo> _builtBrain;
 		private int _builtActionCount;
 
 		[MenuItem(MenuPath)]
@@ -40,7 +40,7 @@ namespace DTech.UtilityAI.Editor
 			window.Show();
 		}
 
-		private static IUtilityBrainDebugInfo FindBrain(List<IUtilityBrainDebugInfo> brains, BrainConfig config)
+		private static IBrainDebugInfo FindBrain(List<IBrainDebugInfo> brains, BrainConfig config)
 		{
 			if (config == null)
 			{
@@ -62,12 +62,12 @@ namespace DTech.UtilityAI.Editor
 
 		private void OnEnable()
 		{
-			UtilityBrainDebugRegistry.AddObserver();
+			BrainDebugRegistry.AddObserver();
 		}
 
 		private void OnDisable()
 		{
-			UtilityBrainDebugRegistry.RemoveObserver();
+			BrainDebugRegistry.RemoveObserver();
 		}
 
 		private void CreateGUI()
@@ -134,13 +134,13 @@ namespace DTech.UtilityAI.Editor
 			}
 
 			var config = _configField.value as BrainConfig;
-			UtilityBrainDebugRegistry.GetBrainsNonAlloc(_brains);
-			IUtilityBrainDebugInfo brain = FindBrain(_brains, config);
+			BrainDebugRegistry.GetBrainsNonAlloc(_brains);
+			IBrainDebugInfo brain = FindBrain(_brains, config);
 			CollectActions(config, brain);
 			if (config != _builtConfig || !IsBuiltBrain(brain) || _actions.Count != _builtActionCount)
 			{
 				_builtConfig = config;
-				_builtBrain = brain != null ? new WeakReference<IUtilityBrainDebugInfo>(brain) : null;
+				_builtBrain = brain != null ? new WeakReference<IBrainDebugInfo>(brain) : null;
 				_builtActionCount = _actions.Count;
 				_graphView.Build(_actions, config != null ? config.ScoreAggregator : null);
 			}
@@ -149,24 +149,24 @@ namespace DTech.UtilityAI.Editor
 			_graphView.UpdateScores(brain?.Context, brain?.CurrentAction);
 		}
 
-		private bool IsBuiltBrain(IUtilityBrainDebugInfo brain)
+		private bool IsBuiltBrain(IBrainDebugInfo brain)
 		{
 			if (_builtBrain == null)
 			{
 				return brain == null;
 			}
 
-			return _builtBrain.TryGetTarget(out IUtilityBrainDebugInfo builtBrain)
+			return _builtBrain.TryGetTarget(out IBrainDebugInfo builtBrain)
 				? ReferenceEquals(builtBrain, brain)
 				: brain == null;
 		}
 
-		private void CollectActions(BrainConfig config, IUtilityBrainDebugInfo brain)
+		private void CollectActions(BrainConfig config, IBrainDebugInfo brain)
 		{
 			_actions.Clear();
 			if (brain != null)
 			{
-				IReadOnlyList<IUtilityAction> brainActions = brain.Actions;
+				IReadOnlyList<IQuorumAction> brainActions = brain.Actions;
 				for (int i = 0; i < brainActions.Count; i++)
 				{
 					_actions.Add(brainActions[i]);
@@ -175,7 +175,7 @@ namespace DTech.UtilityAI.Editor
 				return;
 			}
 
-			IReadOnlyList<UtilityAction> configActions = config?.Actions;
+			IReadOnlyList<QuorumAction> configActions = config?.Actions;
 			for (int i = 0; i < (configActions?.Count ?? 0); i++)
 			{
 				if (configActions[i] == null)

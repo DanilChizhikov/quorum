@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using UnityEditor;
 
-namespace DTech.UtilityAI.Editor
+namespace DTech.Quorum.Editor
 {
 	internal static class BrainConfigIssueFixer
 	{
 		private const string ActionsPropertyName = "_actionEntries";
 		private const string ScoreAggregatorPropertyName = "_scoreAggregator";
-		private const string UpgradeUndoName = "Upgrade Utility AI Actions";
+		private const string UpgradeUndoName = "Upgrade Quorum Actions";
 
 		public static bool CanFix(BrainConfigIssueCode code) =>
 			code switch
@@ -64,7 +64,7 @@ namespace DTech.UtilityAI.Editor
 				return false;
 			}
 
-			property.managedReferenceValue = new MaxUtilityScoreAggregator();
+			property.managedReferenceValue = new MaxScoreAggregator();
 			serializedObject.ApplyModifiedProperties();
 			return true;
 		}

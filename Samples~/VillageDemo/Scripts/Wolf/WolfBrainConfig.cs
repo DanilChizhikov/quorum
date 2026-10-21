@@ -1,7 +1,7 @@
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
-	[CreateAssetMenu(menuName = "DTech/Utility AI/Samples/Wolf Brain Config", fileName = "WolfBrainConfig")]
+	[CreateAssetMenu(menuName = "DTech/Quorum/Samples/Wolf Brain Config", fileName = "WolfBrainConfig")]
 	public sealed class WolfBrainConfig : BrainConfig { }
 }

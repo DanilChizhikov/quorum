@@ -1,14 +1,14 @@
 using System;
 using UnityEngine;
 
-namespace DTech.UtilityAI.Samples.Village
+namespace DTech.Quorum.Samples.Village
 {
 	/// <summary>
 	/// Walk to the closest bush and eat it. Fails when another villager eats it first -
 	/// with SwitchActionType.OnActionFinished a failed action makes the brain pick again right away.
 	/// </summary>
 	[Serializable]
-	[UtilityMenu("Village/Villager/Eat")]
+	[QuorumMenu("Village/Villager/Eat")]
 	public sealed class EatAction : VillageAction<VillagerAgent, VillageContext>
 	{
 		[SerializeField]
@@ -23,25 +23,25 @@ namespace DTech.UtilityAI.Samples.Village
 			World.TryGetNearestFood(context.Agent.transform.position, out _food);
 		}
 
-		protected override UtilityActionState OnTick(VillageContext context)
+		protected override QuorumActionState OnTick(VillageContext context)
 		{
 			if (_food == null)
 			{
-				return UtilityActionState.Failed;
+				return QuorumActionState.Failed;
 			}
 
 			if (!context.Agent.Mover.MoveTo(_food.Position, _speed, 0.6f))
 			{
-				return UtilityActionState.Running;
+				return QuorumActionState.Running;
 			}
 
 			if (!World.TryConsume(_food))
 			{
-				return UtilityActionState.Failed;
+				return QuorumActionState.Failed;
 			}
 
 			context.Agent.Hunger = 0f;
-			return UtilityActionState.Completed;
+			return QuorumActionState.Completed;
 		}
 
 		protected override void Exit(VillageContext context)

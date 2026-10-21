@@ -4,7 +4,7 @@ using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace DTech.UtilityAI.Editor
+namespace DTech.Quorum.Editor
 {
 	internal sealed class BrainMapGraphView : GraphView
 	{
@@ -23,7 +23,7 @@ namespace DTech.UtilityAI.Editor
 
 		public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter) => new();
 
-		public void Build(IReadOnlyList<IUtilityAction> actions, UtilityScoreAggregator aggregator)
+		public void Build(IReadOnlyList<IQuorumAction> actions, ScoreAggregator aggregator)
 		{
 			ClearGraph();
 			float nextY = 0f;
@@ -45,7 +45,7 @@ namespace DTech.UtilityAI.Editor
 			}
 		}
 
-		public void UpdateScores(IUtilityContext context, IUtilityAction currentAction)
+		public void UpdateScores(IQuorumContext context, IQuorumAction currentAction)
 		{
 			for (int i = 0; i < _actionNodes.Count; i++)
 			{
@@ -57,7 +57,7 @@ namespace DTech.UtilityAI.Editor
 					continue;
 				}
 
-				float score = UtilityScoreSampler.Evaluate(node.Action, context, out string error);
+				float score = ScoreSampler.Evaluate(node.Action, context, out string error);
 				node.SetScore(score, error);
 			}
 
@@ -70,7 +70,7 @@ namespace DTech.UtilityAI.Editor
 					continue;
 				}
 
-				float score = UtilityScoreSampler.Evaluate(node.Consideration, context, out string error);
+				float score = ScoreSampler.Evaluate(node.Consideration, context, out string error);
 				node.SetScore(score, error);
 			}
 		}
@@ -102,13 +102,13 @@ namespace DTech.UtilityAI.Editor
 			AddElement(edge);
 		}
 
-		private float AddAction(IUtilityAction action, float startY)
+		private float AddAction(IQuorumAction action, float startY)
 		{
 			var actionNode = new ActionMapNode(action);
 			_actionNodes.Add(actionNode);
 			AddElement(actionNode);
 
-			UtilityConsiderationNode root = UtilityConsiderationGraphReader.ReadAction(action);
+			ConsiderationNode root = ConsiderationGraphReader.ReadAction(action);
 			float rowY = startY;
 			if (root != null)
 			{
@@ -125,14 +125,14 @@ namespace DTech.UtilityAI.Editor
 			return startY + usedHeight + BrainMapLayout.ActionGap;
 		}
 
-		private ConsiderationMapNode AddConsideration(UtilityConsiderationNode node, int depth, ref float rowY)
+		private ConsiderationMapNode AddConsideration(ConsiderationNode node, int depth, ref float rowY)
 		{
 			var mapNode = new ConsiderationMapNode(node);
 			_considerationNodes.Add(mapNode);
 			AddElement(mapNode);
 			BrainMapLayout.Place(mapNode, BrainMapLayout.GetConsiderationColumnX(depth), rowY);
 			rowY += BrainMapLayout.RowHeight;
-			IReadOnlyList<UtilityConsiderationNode> children = node.Children;
+			IReadOnlyList<ConsiderationNode> children = node.Children;
 			for (int i = 0; i < children.Count; i++)
 			{
 				ConsiderationMapNode childNode = AddConsideration(children[i], depth + 1, ref rowY);
