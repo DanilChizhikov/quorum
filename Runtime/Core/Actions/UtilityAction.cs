@@ -16,7 +16,26 @@ namespace DTech.UtilityAI
 			_consideration = consideration;
 		}
 
+		internal void InitializeConsideration(IUtilityContext context)
+		{
+			_consideration?.Initialize(context);
+		}
+
 		public virtual void Initialize(IUtilityContext context) { }
+
+		/// <summary>
+		/// Creates the per-brain copy of this action. The default is a shallow field copy plus a
+		/// copy of the consideration tree, which is what config data needs: value fields are
+		/// duplicated and references to shared assets stay shared. Override it when a reference
+		/// field holds per-agent state that two brains must not share.
+		/// </summary>
+		/// <returns>Copy of this action for one brain.</returns>
+		public virtual UtilityAction Clone()
+		{
+			var clone = (UtilityAction)MemberwiseClone();
+			clone._consideration = _consideration?.Clone();
+			return clone;
+		}
 
 		public abstract void Enter(IUtilityContext context);
 

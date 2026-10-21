@@ -1,4 +1,4 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 namespace DTech.UtilityAI.Diagnostics
 {
 	internal readonly struct UtilityBrainSwitchRecord

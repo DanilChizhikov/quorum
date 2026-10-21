@@ -14,6 +14,8 @@ namespace DTech.UtilityAI
 		
 		private readonly List<Action> _updateActions = new();
 		private readonly List<Action> _fixedUpdateActions = new();
+		private readonly HashSet<Action> _registeredUpdateActions = new();
+		private readonly HashSet<Action> _registeredFixedUpdateActions = new();
 		private readonly Action<Action> _invokeAction;
 
 		public static UtilityUpdateService Instance
@@ -58,15 +60,15 @@ namespace DTech.UtilityAI
 		
 		public void RegisterUpdate(Action updateAction)
 		{
-			if (!_updateActions.Contains(updateAction))
+			if (_registeredUpdateActions.Add(updateAction))
 			{
 				_updateActions.Add(updateAction);
 			}
 		}
-		
+
 		public void RegisterFixUpdate(Action updateAction)
 		{
-			if (!_fixedUpdateActions.Contains(updateAction))
+			if (_registeredFixedUpdateActions.Add(updateAction))
 			{
 				_fixedUpdateActions.Add(updateAction);
 			}
@@ -74,12 +76,18 @@ namespace DTech.UtilityAI
 
 		public void UnregisterUpdate(Action updateAction)
 		{
-			_updateActions.Remove(updateAction);
+			if (_registeredUpdateActions.Remove(updateAction))
+			{
+				_updateActions.Remove(updateAction);
+			}
 		}
-		
+
 		public void UnregisterFixUpdate(Action updateAction)
 		{
-			_fixedUpdateActions.Remove(updateAction);
+			if (_registeredFixedUpdateActions.Remove(updateAction))
+			{
+				_fixedUpdateActions.Remove(updateAction);
+			}
 		}
 		
 		public void Dispose()

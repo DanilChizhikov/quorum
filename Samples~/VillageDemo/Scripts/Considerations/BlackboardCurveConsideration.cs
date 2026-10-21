@@ -7,6 +7,8 @@ namespace DTech.UtilityAI.Samples.Village
 	/// <summary>
 	/// Response curve over a float blackboard variable: the value is remapped from [min, max] to [0, 1]
 	/// and fed through the curve. The bread and butter of utility AI - shape the curve, not the code.
+	/// The variable is resolved once in Initialize and then read straight from the cached reference:
+	/// a lookup by name costs far more than the whole rest of the score, so never do it in Evaluate.
 	/// </summary>
 	[Serializable]
 	[UtilityMenu("Blackboard/Float Curve")]
@@ -24,6 +26,8 @@ namespace DTech.UtilityAI.Samples.Village
 		[SerializeField]
 		private AnimationCurve _curve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
 
+		private BlackboardVariable<float> _variable;
+
 		public BlackboardCurveConsideration() { }
 
 		public BlackboardCurveConsideration(string key, float min, float max, AnimationCurve curve)
@@ -34,15 +38,26 @@ namespace DTech.UtilityAI.Samples.Village
 			_curve = curve;
 		}
 
-		public override float Evaluate(IUtilityContext context)
+		public override void Initialize(IUtilityContext context)
 		{
 			RuntimeBlackboard blackboard = context.Blackboard;
-			if (blackboard == null || _curve == null || !blackboard.TryGetVariable(_key, out BlackboardVariable<float> variable))
+			if (blackboard == null || !blackboard.TryGetVariable(_key, out BlackboardVariable<float> variable))
+			{
+				_variable = null;
+				return;
+			}
+
+			_variable = variable;
+		}
+
+		public override float Evaluate(IUtilityContext context)
+		{
+			if (_variable == null || _curve == null)
 			{
 				return 0f;
 			}
 
-			float normalized = Mathf.InverseLerp(_min, _max, variable.Value);
+			float normalized = Mathf.InverseLerp(_min, _max, _variable.Value);
 			return Mathf.Clamp01(_curve.Evaluate(normalized));
 		}
 	}

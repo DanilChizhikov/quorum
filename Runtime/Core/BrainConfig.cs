@@ -6,8 +6,6 @@ namespace DTech.UtilityAI
 {
 	public abstract class BrainConfig : ScriptableObject
 	{
-		private const string RuntimeNameSuffix = " (Runtime)";
-		
 		[SerializeField]
 		private BrainUpdateType _updateType = BrainUpdateType.Update;
 		
@@ -42,13 +40,6 @@ namespace DTech.UtilityAI
 		internal void SetScoreAggregator(UtilityScoreAggregator scoreAggregator)
 		{
 			_scoreAggregator = scoreAggregator;
-		}
-		
-		internal BrainConfig CreateRuntimeInstance()
-		{
-			BrainConfig instance = Instantiate(this);
-			instance.name = string.Concat(name, RuntimeNameSuffix);
-			return instance;
 		}
 		
 		internal void UpgradeLegacyActions()

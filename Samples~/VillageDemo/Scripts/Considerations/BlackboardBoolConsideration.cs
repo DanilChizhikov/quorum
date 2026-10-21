@@ -20,6 +20,8 @@ namespace DTech.UtilityAI.Samples.Village
 		[SerializeField]
 		private float _whenFalse = 0f;
 
+		private BlackboardVariable<bool> _variable;
+
 		public BlackboardBoolConsideration() { }
 
 		public BlackboardBoolConsideration(string key, float whenTrue = 1f, float whenFalse = 0f)
@@ -29,15 +31,26 @@ namespace DTech.UtilityAI.Samples.Village
 			_whenFalse = whenFalse;
 		}
 
-		public override float Evaluate(IUtilityContext context)
+		public override void Initialize(IUtilityContext context)
 		{
 			RuntimeBlackboard blackboard = context.Blackboard;
 			if (blackboard == null || !blackboard.TryGetVariable(_key, out BlackboardVariable<bool> variable))
 			{
+				_variable = null;
+				return;
+			}
+
+			_variable = variable;
+		}
+
+		public override float Evaluate(IUtilityContext context)
+		{
+			if (_variable == null)
+			{
 				return _whenFalse;
 			}
 
-			return variable.Value ? _whenTrue : _whenFalse;
+			return _variable.Value ? _whenTrue : _whenFalse;
 		}
 	}
 }

@@ -87,18 +87,17 @@ namespace DTech.UtilityAI.Editor
 				? scoringCase.Blackboard.ToRuntimeBlackboard()
 				: new RuntimeBlackboard();
 
-			BrainConfig clone = runContext.Config.CreateRuntimeInstance();
 			try
 			{
 				IUtilityContext context = runContext.Probe.CreateContext(blackboard);
-				List<IUtilityAction> actions = PrepareActions(clone, context, runContext.Probe.CreateInjector());
+				List<IUtilityAction> actions = PrepareActions(runContext.Config, context, runContext.Probe.CreateInjector());
 				for (int i = 0; i < actions.Count && i < count; i++)
 				{
 					scores[i] = UtilityScoreSampler.Evaluate(actions[i], context, out string error);
 					errors[i] = error;
 				}
 
-				winnerIndex = Aggregate(clone.ScoreAggregator, actions, context);
+				winnerIndex = Aggregate(runContext.Config.ScoreAggregator, actions, context);
 				DisposeActions(actions);
 			}
 			catch (Exception exception)
@@ -107,7 +106,6 @@ namespace DTech.UtilityAI.Editor
 			}
 			finally
 			{
-				UnityEngine.Object.DestroyImmediate(clone);
 				blackboard.Dispose();
 			}
 
@@ -126,14 +124,16 @@ namespace DTech.UtilityAI.Editor
 			IReadOnlyList<UtilityAction> configActions = config.Actions;
 			for (int i = 0; i < (configActions?.Count ?? 0); i++)
 			{
-				UtilityAction action = configActions[i];
-				if (action == null)
+				UtilityAction configAction = configActions[i];
+				if (configAction == null)
 				{
 					continue;
 				}
 
+				UtilityAction action = configAction.Clone();
 				actionInjector.Inject(action);
 				action.Initialize(context);
+				action.InitializeConsideration(context);
 				actions.Add(action);
 			}
 

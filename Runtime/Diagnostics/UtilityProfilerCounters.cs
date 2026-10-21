@@ -1,4 +1,4 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 using Unity.Profiling;
 
 namespace DTech.UtilityAI.Diagnostics
