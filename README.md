@@ -30,6 +30,7 @@ adapters ship with the package.
     - [Diagnostics cost](#diagnostics-cost)
     - [Brain Map](#brain-map)
     - [Scoring Matrix](#scoring-matrix)
+    - [Update window](#update-window)
 - [Samples](#samples)
 - [Benchmarks](#benchmarks)
     - [What the suite covers](#what-the-suite-covers)
@@ -431,6 +432,12 @@ export. `ScoringMatrixRunner.Run` has no UI, so the same cases can be asserted f
 The matrix evaluates `CalculateUtility` only: an action whose score depends on state built in `Enter`
 is not reproduced. For the same reason `CalculateUtility` must stay free of side effects - the debugger,
 the map and the matrix all call it outside of the brain tick.
+
+### Update window
+For a package installed from git or a registry, the Editor checks for a newer version once per session
+and shows the release notes of every version after the installed one. **Skip Version** hides the window
+until a newer release, **Skip Always** hides it for good, and **Tools > DTech > Quorum > Check Update**
+opens it on demand. A copy of the package under `Assets` is not checked.
 
 ## Samples
 
