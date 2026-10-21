@@ -26,6 +26,7 @@ dependencies from any DI container - Zenject and VContainer adapters ship with t
     - [Brain Map](#brain-map)
     - [Scoring Matrix](#scoring-matrix)
 - [Samples](#samples)
+- [Benchmarks](#benchmarks)
 - [License](#license)
 
 ## Getting Started
@@ -229,6 +230,18 @@ What it shows:
 
 Open `Window/DTech/Utility AI/Debugger` and `Window/DTech/Utility AI/Brain Map` in play mode to watch
 the scores live.
+
+## Benchmarks
+`com.dtech.utilityai.performance-tests` (`Tests/Performance`) measures brain creation, the per-frame
+tick, `Enable`/`Disable`, scoring and switch requests. The assembly is opt-in:
+
+1. Add `com.unity.test-framework.performance` to your project.
+2. Add `UNITY_INCLUDE_PERFORMANCE_TESTS` to the Scripting Define Symbols.
+
+Run it from **Test Runner** and read the numbers in **Window > Analysis > Performance Test Report**.
+The assembly builds for every platform, so the same benchmarks run in a player as well. IL2CPP
+numbers differ from Editor ones, and an Editor or development build additionally pays for the brain
+registry, the switch log and the profiler counters behind `UNITY_EDITOR || DEVELOPMENT_BUILD`.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
