@@ -29,12 +29,12 @@ namespace DTech.UtilityAI
 
 		public FormulaUtilityConsideration(string expression)
 		{
-			_expression = expression;
+			_expression = string.IsNullOrEmpty(expression) ? DefaultExpression : expression;
 		}
 
 		public override void Initialize(IUtilityContext context)
 		{
-			Bind(context?.Blackboard);
+			Bind(context.Blackboard);
 		}
 
 		public override UtilityConsideration Clone()
@@ -46,12 +46,6 @@ namespace DTech.UtilityAI
 
 		public override float Evaluate(IUtilityContext context)
 		{
-			RuntimeBlackboard blackboard = context?.Blackboard;
-			if (_evaluator == null || !_evaluator.IsCurrent(_expression, blackboard))
-			{
-				Bind(blackboard);
-			}
-
 			return _evaluator.Evaluate(Fallback);
 		}
 
