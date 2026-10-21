@@ -1,13 +1,14 @@
-# Utility AI
+# Quorum
 [![Unity Version](https://img.shields.io/badge/unity-6000.0+-000.svg)](https://unity3d.com/get-unity/download/archive)
-![Unity Tests](https://github.com/DanilChizhikov/utilityai/actions/workflows/tests.yml/badge.svg?branch=master)
+![Unity Tests](https://github.com/DanilChizhikov/quorum/actions/workflows/tests.yml/badge.svg?branch=master)
 
 ## Overview
-Utility AI picks the action with the best score every time a brain is asked to switch. Actions are
-configured in a `BrainConfig` asset and can be written either as plain C# classes (`UtilityAction`,
-stored with `[SerializeReference]`) or as `ScriptableObject` assets (`ScriptableUtilityAction`).
-Plain actions are cloned per brain, so every agent owns its action state, and they receive their
-dependencies from any DI container - Zenject and VContainer adapters ship with the package.
+Quorum is a utility AI for Unity: it picks the action with the best score every time a brain
+is asked to switch. Actions are configured in a `BrainConfig` asset and can be written either as
+plain C# classes (`QuorumAction`, stored with `[SerializeReference]`) or as `ScriptableObject`
+assets (`ScriptableQuorumAction`). Plain actions are cloned per brain, so every agent owns its
+action state, and they receive their dependencies from any DI container - Zenject and VContainer
+adapters ship with the package.
 
 ## Table of Contents
 - [Getting Started](#getting-started)
@@ -43,44 +44,44 @@ dependencies from any DI container - Zenject and VContainer adapters ship with t
 - [Unity](https://unity.com/releases/editor/archive) 6000.0+
 
 ### Manual Installation
-1. Download the .unitypackage from the [releases](https://github.com/DanilChizhikov/utilityai/releases/) page.
-2. Import com.dtech.utilityai.x.x.x.unitypackage into your project.
+1. Download the .unitypackage from the [releases](https://github.com/DanilChizhikov/quorum/releases/) page.
+2. Import com.dtech.quorum.x.x.x.unitypackage into your project.
 
 ### UPM Installation
 1. Open the manifest.json file in your project's Packages folder.
 2. Add the following line to the dependencies section:
     ```json
-    "com.dtech.utilityai": "https://github.com/DanilChizhikov/utilityai.git",
+    "com.dtech.quorum": "https://github.com/DanilChizhikov/quorum.git",
     ```
 3. Unity will automatically import the package.
 
-If you want to set a target version, Utility AI uses the `v*.*.*` release tag so you can specify a version like #v1.0.0.
+If you want to set a target version, Quorum uses the `v*.*.*` release tag so you can specify a version like #v1.0.0.
 
-For example `https://github.com/DanilChizhikov/utilityai.git#v1.0.0`.
+For example `https://github.com/DanilChizhikov/quorum.git#v1.0.0`.
 
 ## Features
-- Score based action selection with pluggable aggregators (`MaxUtilityScoreAggregator`, `RandomUtilityScoreAggregator`).
+- Score based action selection with pluggable aggregators (`MaxScoreAggregator`, `RandomScoreAggregator`).
 - Actions as plain C# classes: no asset per behaviour, full `[SerializeReference]` support in the config.
-- Type picker in the inspector for actions, considerations and aggregators, with grouping via `[UtilityMenu]`.
+- Type picker in the inspector for actions, considerations and aggregators, with grouping via `[QuorumMenu]`.
 - One action instance per brain: the config is cloned at construction, so agents never share action state.
-- Dependency injection through `IUtilityActionInjector`, with ready adapters for Zenject and VContainer.
-- Composable considerations (`CompositeUtilityConsideration`: multiply, min, max, average, sum).
-- `FormulaUtilityConsideration`: a weight written as a math formula, reading its inputs from the blackboard, with live green/red validation in the inspector.
-- `ScriptableUtilityAction` assets are referenced from the config through `ScriptableUtilityActionReference`.
+- Dependency injection through `IQuorumActionInjector`, with ready adapters for Zenject and VContainer.
+- Composable considerations (`CompositeConsideration`: multiply, min, max, average, sum).
+- `FormulaConsideration`: a weight written as a math formula, reading its inputs from the blackboard, with live green/red validation in the inspector.
+- `ScriptableQuorumAction` assets are referenced from the config through `ScriptableQuorumActionReference`.
 - Update driven by the player loop (`Update`, `FixedUpdate`) or by your own code (`BrainUpdateType.Custom`).
 
 ## Usage
 
 ### Context and agent
 ```csharp
-public sealed class EnemyAgent : IUtilityAgent
+public sealed class EnemyAgent : IQuorumAgent
 {
     public Transform Transform { get; }
 
     public EnemyAgent(Transform transform) => Transform = transform;
 }
 
-public sealed class EnemyContext : UtilityContext<EnemyAgent>
+public sealed class EnemyContext : QuorumContext<EnemyAgent>
 {
     public EnemyContext(EnemyAgent agent, RuntimeBlackboard blackboard) : base(agent, blackboard) { }
 }
@@ -104,8 +105,8 @@ Dispose the blackboard with the agent, as `VillagerAgent` does in the sample.
 ### Action as a plain class
 ```csharp
 [Serializable]
-[UtilityMenu("Enemy/Chase Target")]
-public sealed class ChaseTargetAction : UtilityAction<EnemyAgent, EnemyContext>
+[QuorumMenu("Enemy/Chase Target")]
+public sealed class ChaseTargetAction : QuorumAction<EnemyAgent, EnemyContext>
 {
     [SerializeField]
     private float _speed = 3f;
@@ -115,8 +116,8 @@ public sealed class ChaseTargetAction : UtilityAction<EnemyAgent, EnemyContext>
 
     protected override void Enter(EnemyContext context) => _pathfinder.Begin(context.Agent.Transform);
 
-    protected override UtilityActionState OnTick(EnemyContext context) =>
-        _pathfinder.Move(_speed) ? UtilityActionState.Completed : UtilityActionState.Running;
+    protected override QuorumActionState OnTick(EnemyContext context) =>
+        _pathfinder.Move(_speed) ? QuorumActionState.Completed : QuorumActionState.Running;
 
     protected override float CalculateUtility(EnemyContext context) => 0.5f;
 
@@ -135,25 +136,25 @@ re-selection, so it is the hottest code in the package: a blackboard lookup by n
 Resolve everything you can in `Initialize` and keep the reference:
 
 ```csharp
-public override void Initialize(IUtilityContext context)
+public override void Initialize(IQuorumContext context)
 {
     context.Blackboard.TryGetVariable(_key, out _variable);
 }
 
-public override float Evaluate(IUtilityContext context) =>
+public override float Evaluate(IQuorumContext context) =>
     _variable != null ? _curve.Evaluate(_variable.Value) : 0f;
 ```
 
 The brain calls `Initialize` once per action, on its own cloned consideration tree, so caching
-per-agent data there is safe. `CompositeUtilityConsideration` forwards the call to its children.
+per-agent data there is safe. `CompositeConsideration` forwards the call to its children.
 
-One exception: a consideration that lives on a `ScriptableUtilityAction` **asset** is shared by
+One exception: a consideration that lives on a `ScriptableQuorumAction` **asset** is shared by
 every brain that references it, so it must not cache per-agent data. The brain does not call
 `Initialize` on it for that reason - keep such considerations stateless, or move the action into the
 config as a plain `[Serializable]` class.
 
 ### Formula consideration
-`FormulaUtilityConsideration` is a weight written as a formula instead of a class. Every identifier in
+`FormulaConsideration` is a weight written as a formula instead of a class. Every identifier in
 it is a blackboard variable name, so a designer can shape a score without a recompile:
 
 ```
@@ -170,7 +171,7 @@ each their own colour, and brackets cycling through four colours by nesting dept
 matches the `(` that shares its colour. An unmatched bracket is red. Field and echo share a monospace
 font, so the character position in an error message points at a column you can count to.
 
-The same compile check runs over every config in `Window/DTech/Utility AI/Validator`, so a broken
+The same compile check runs over every config in `Window/DTech/Quorum/Validator`, so a broken
 formula three composites deep is reported there as well.
 
 The score is **0** whenever the formula cannot produce a number: the expression does not compile, a
@@ -178,7 +179,7 @@ variable is not on the blackboard, or the result is not finite. There is no fall
 the same rule the sample's `BlackboardCurveConsideration` follows when its variable is missing.
 
 #### Variables
-An identifier that is not a function or a constant is looked up in `IUtilityContext.Blackboard` by
+An identifier that is not a function or a constant is looked up in `IQuorumContext.Blackboard` by
 name. Matching follows the blackboard's own rule - trimmed and case-insensitive - and `float`, `int`
 and `bool` variables are all accepted, a `bool` reading as `1` or `0`. For a name that is not a plain
 identifier, wrap it in braces: `{Max Hunger}`.
@@ -191,12 +192,12 @@ in the inspector takes effect while the game is running.
 
 A formula that never got `Initialize` scores `0`: binding on the fly would cost a lookup per name per
 evaluation, and on a shared asset it would bind to whichever agent evaluated last. A formula therefore
-belongs on a per-brain action, never on a `ScriptableUtilityAction` asset - the validator reports that
+belongs on a per-brain action, never on a `ScriptableQuorumAction` asset - the validator reports that
 one as an error.
 
 A name the blackboard has no variable for makes the whole formula score 0 rather than quietly reading
 as zero, because a typo that produces a plausible number is worse than one that produces none. At
-runtime the verdict is in the debugger: open `Window/DTech/Utility AI/Debugger` and the formula's node
+runtime the verdict is in the debugger: open `Window/DTech/Quorum/Debugger` and the formula's node
 names them, `missing: Hungr`, in place of its score.
 
 To catch a typo without entering play mode, set **Blackboard Schema** on the `BrainConfig` to a
@@ -214,7 +215,7 @@ their own `RuntimeBlackboard` and nothing about runtime changes. What it buys:
 
 Leave the field empty and none of that happens - no flagging, no button, no validator issue. Matching
 follows the blackboard's own rule, trimmed and case-insensitive. A formula on a
-`ScriptableUtilityAction` asset has no config to read a schema from, so it keeps syntax checking only.
+`ScriptableQuorumAction` asset has no config to read a schema from, so it keeps syntax checking only.
 
 #### Grammar
 Operators, loosest binding first. `^` is right-associative, every other operator is left-associative:
@@ -250,33 +251,33 @@ arithmetic that is harmless: `if(dist > 0, 1 / dist, 0)` returns `0` at `dist ==
 poisoning the score. It does mean a formula cannot use `if()` to guard against an expensive branch.
 
 #### Reusing the field
-The validated field is driven by `[UtilityFormula]` on any serialized string, so an action of your own
+The validated field is driven by `[Formula]` on any serialized string, so an action of your own
 can carry a formula too:
 
 ```csharp
 [Serializable]
-[UtilityMenu("Enemy/Chase Target")]
-public sealed class ChaseTargetAction : UtilityAction<EnemyAgent, EnemyContext>
+[QuorumMenu("Enemy/Chase Target")]
+public sealed class ChaseTargetAction : QuorumAction<EnemyAgent, EnemyContext>
 {
-    [SerializeField, UtilityFormula]
+    [SerializeField, Formula]
     private string _speed = "clamp(Threat * 2, 1, 6)";
 
     [Inject]
     private IPathfinder _pathfinder;
 
-    private UtilityFormulaEvaluator _evaluator;
+    private FormulaEvaluator _evaluator;
 
     protected override void Initialize(EnemyContext context)
     {
-        _evaluator = new UtilityFormulaEvaluator();
+        _evaluator = new FormulaEvaluator();
         _evaluator.TrySetExpression(_speed);
         _evaluator.Bind(context.Blackboard);
     }
 
     protected override void Enter(EnemyContext context) => _pathfinder.Begin(context.Agent.Transform);
 
-    protected override UtilityActionState OnTick(EnemyContext context) =>
-        _pathfinder.Move(_evaluator.Evaluate(1f)) ? UtilityActionState.Completed : UtilityActionState.Running;
+    protected override QuorumActionState OnTick(EnemyContext context) =>
+        _pathfinder.Move(_evaluator.Evaluate(1f)) ? QuorumActionState.Completed : QuorumActionState.Running;
 
     protected override void Exit(EnemyContext context) => _pathfinder.Stop();
 }
@@ -286,8 +287,8 @@ public sealed class ChaseTargetAction : UtilityAction<EnemyAgent, EnemyContext>
 there - rather than in a field initializer - keeps two brains built from one config off each other's
 bindings.
 
-`UtilityFormulaEvaluator` holds per-agent data, so give every agent its own and never share one
-between brains. `UtilityFormulaCompiler.TryCompile` is the same entry point the inspector and the
+`FormulaEvaluator` holds per-agent data, so give every agent its own and never share one
+between brains. `FormulaCompiler.TryCompile` is the same entry point the inspector and the
 validator use, if you want to check a formula yourself.
 
 ### Config and brain
@@ -299,9 +300,9 @@ picked the same way.
 [CreateAssetMenu(menuName = "Game/Enemy Brain Config")]
 public sealed class EnemyBrainConfig : BrainConfig { }
 
-public sealed class EnemyBrain : UtilityBrain<EnemyBrainConfig, EnemyContext>
+public sealed class EnemyBrain : QuorumBrain<EnemyBrainConfig, EnemyContext>
 {
-    public EnemyBrain(EnemyBrainConfig config, EnemyContext context, IUtilityActionInjector injector)
+    public EnemyBrain(EnemyBrainConfig config, EnemyContext context, IQuorumActionInjector injector)
         : base(config, context, injector) { }
 }
 ```
@@ -316,7 +317,7 @@ counts it down when your code ticks it. A `RequestSwitchAction()` without a dela
 pending delayed one, and cancelling the token of a pending request cancels the switch instead of
 firing it. `Enable` and `RequestSwitchAction` do nothing once the brain is disposed.
 
-`Clone()` is `virtual` on `UtilityAction`, `UtilityConsideration` and `UtilityScoreAggregator`, and
+`Clone()` is `virtual` on `QuorumAction`, `Consideration` and `ScoreAggregator`, and
 the default covers config data: value fields are duplicated, references to shared assets stay
 shared. Override it only when a reference field holds per-agent state that two brains must not
 share.
@@ -326,7 +327,7 @@ Zenject:
 ```csharp
 public override void InstallBindings()
 {
-    Container.BindUtilityActionInjector();
+    Container.BindQuorumActionInjector();
 }
 ```
 
@@ -334,7 +335,7 @@ VContainer:
 ```csharp
 protected override void Configure(IContainerBuilder builder)
 {
-    builder.RegisterUtilityActionInjector();
+    builder.RegisterQuorumActionInjector();
 }
 ```
 
@@ -343,16 +344,16 @@ Without an injector the brain works as well - pass `null` and actions keep their
 The integration assemblies compile only when their define is set. When the container comes from the
 package manager (`com.svermeulen.extenject`, `com.modesttree.zenject`, `jp.hadashikick.vcontainer`)
 the define is applied automatically. When Zenject is installed as plain files under `Assets/Plugins`,
-add `UTILITYAI_ZENJECT_ENABLED` to Scripting Define Symbols manually (same for
-`UTILITYAI_VCONTAINER_ENABLED`).
+add `QUORUM_ZENJECT_ENABLED` to Scripting Define Symbols manually (same for
+`QUORUM_VCONTAINER_ENABLED`).
 
 ## Managed stripping
 Actions, considerations and aggregators are created from `[SerializeReference]` data and get their
 dependencies through reflection, so nothing in compiled code references those types. On
 `Managed Stripping Level = High` that makes them candidates for removal.
 
-The package covers its own: `Runtime/link.xml` keeps `com.dtech.utilityai` whole, and the base types
-(`UtilityAction`, `ScriptableUtilityAction`, `UtilityConsideration`, `UtilityScoreAggregator` and the
+The package covers its own: `Runtime/link.xml` keeps `com.dtech.quorum` whole, and the base types
+(`QuorumAction`, `ScriptableQuorumAction`, `Consideration`, `ScoreAggregator` and the
 built-in implementations) also carry `[Preserve]`, which is what a build that compiles the package
 from sources goes by.
 
@@ -362,8 +363,8 @@ with an IL2CPP build at `High` before shipping.
 
 ## Editor Tools
 
-All tooling lives in `com.dtech.utilityai.editor`. The runtime hooks it needs (the live brain registry,
-the switch log and the profiler counters) compile only under `UNITY_EDITOR || UTILITYAI_DIAGNOSTICS`,
+All tooling lives in `com.dtech.quorum.editor`. The runtime hooks it needs (the live brain registry,
+the switch log and the profiler counters) compile only under `UNITY_EDITOR || QUORUM_DIAGNOSTICS`,
 so a player build carries none of it unless you ask - see [Diagnostics cost](#diagnostics-cost).
 
 ### Config editing
@@ -374,25 +375,25 @@ clipboard, so entries move between configs and between projects. Considerations 
 aggregator have the same Copy/Paste/Clear menu on their header.
 
 ### Validator
-`Window/DTech/Utility AI/Validator` scans every `BrainConfig` in the project: missing score aggregator,
-empty or missing action entries, `ScriptableUtilityActionReference` without an asset, duplicate action
+`Window/DTech/Quorum/Validator` scans every `BrainConfig` in the project: missing score aggregator,
+empty or missing action entries, `ScriptableQuorumActionReference` without an asset, duplicate action
 types, empty or single-child composites and actions that can only ever score 0. Issues for the inspected config are also shown inline in its inspector. Fixable ones offer a Fix
 button; `Fix All` applies every automatic fix.
 
 ### Renamed and moved types
-Mark a type with `[UtilityFormerlySerializedType("Old.Namespace.OldName, OldAssembly")]` and press
+Mark a type with `[QuorumFormerlySerializedType("Old.Namespace.OldName, OldAssembly")]` and press
 `Migrate Types` in the validator. It lists the asset files that reference the former name, asks for
 confirmation and rewrites them on disk, keeping every serialized field value. Nothing runs
 automatically. A missing entry in the inspector also offers `Remap`, which picks a new type for that
 slot - the entry's field values are lost there, so prefer the migration for a rename.
 
 ### Hidden types
-A type derived from `UtilityAction`, `UtilityConsideration` or `UtilityScoreAggregator` without
-`[Serializable]` never shows up in the picker. `Window/DTech/Utility AI/Hidden Types` lists those types,
+A type derived from `QuorumAction`, `Consideration` or `ScoreAggregator` without
+`[Serializable]` never shows up in the picker. `Window/DTech/Quorum/Hidden Types` lists those types,
 opens their script and can insert the attribute (and `using System;`) after showing what it will write.
 
 ### Debugger
-`Window/DTech/Utility AI/Debugger` lists the live brains, and for the selected one shows the score of
+`Window/DTech/Quorum/Debugger` lists the live brains, and for the selected one shows the score of
 every action with a bar, the current action and its state, the consideration tree with the score of each
 node, and the last switches with their timestamps. Sampling runs at 10 Hz and stops with `Pause`;
 an exception from `CalculateUtility` is shown in the cell instead of being logged every frame. In play
@@ -400,13 +401,13 @@ mode a `BrainConfig` inspector also lists the live brains built from that asset 
 on them.
 
 ### Profiler
-The `Utility AI` profiler module counts active brains and action switches per frame and times action
+The `Quorum` profiler module counts active brains and action switches per frame and times action
 selection, which is how a brain that re-selects every frame becomes visible.
 
 ### Diagnostics cost
 Everything above - the live brain registry, the switch log and the profiler module - is compiled into
 the **Editor only**. A player build, development or not, carries none of it unless you add
-`UTILITYAI_DIAGNOSTICS` to its Scripting Define Symbols.
+`QUORUM_DIAGNOSTICS` to its Scripting Define Symbols.
 
 That default is deliberate. Measured on Android/IL2CPP, the instrumentation costs more than the work
 it measures: **890 ns on every action selection** (the profiler marker around it), and a brain's
@@ -415,17 +416,17 @@ scans the brain registry. Turn it on to look at a player build with the debugger
 module, and leave it off to profile your game.
 
 ### Brain Map
-`Window/DTech/Utility AI/Brain Map` draws the selected config as a read-only graph: considerations feed
+`Window/DTech/Quorum/Brain Map` draws the selected config as a read-only graph: considerations feed
 their action, actions feed the score aggregator. With a live brain for that config the nodes also show
 their current score and the current action is highlighted.
 
 ### Scoring Matrix
-`Window/DTech/Utility AI/Scoring Matrix` scores a config against a set of blackboard snapshots without
-entering play mode. Create a `UtilityScoringProbe` subclass that builds your context (and, if the
-actions need dependencies, an injector), then a `DTech/Utility AI/Scoring Scenario` asset holding the
+`Window/DTech/Quorum/Scoring Matrix` scores a config against a set of blackboard snapshots without
+entering play mode. Create a `ScoringProbe` subclass that builds your context (and, if the
+actions need dependencies, an injector), then a `DTech/Quorum/Scoring Scenario` asset holding the
 probe, the config and the cases. Every case is a `BlackboardAsset` plus the action expected to win.
 The result is a matrix of case against action, with the winner highlighted, mismatches in red and CSV
-export. `UtilityScoringMatrixRunner.Run` has no UI, so the same cases can be asserted from a test.
+export. `ScoringMatrixRunner.Run` has no UI, so the same cases can be asserted from a test.
 
 The matrix evaluates `CalculateUtility` only: an action whose score depends on state built in `Enter`
 is not reproduced. For the same reason `CalculateUtility` must stay free of side effects - the debugger,
@@ -434,7 +435,7 @@ the map and the matrix all call it outside of the brain tick.
 ## Samples
 
 ### Village Demo
-Import it from **Package Manager > Utility AI > Samples > Village Demo**, then open
+Import it from **Package Manager > Quorum > Samples > Village Demo**, then open
 `Scenes/VillageDemo.unity` and press Play. Villagers eat, sleep, chop wood and run from wolves;
 wolves patrol, hunt and rest. The sample's own `README.md` walks through every file.
 
@@ -442,26 +443,26 @@ What it shows:
 - Sensors write into a per-agent `RuntimeBlackboard`; considerations only read it, so the
   `Scoring Matrix` scenario in `Scoring/` reproduces every villager score without a scene.
 - Response curves (`BlackboardCurveConsideration`), gates (`BlackboardBoolConsideration`) and weights
-  combined with `CompositeUtilityConsideration`.
+  combined with `CompositeConsideration`.
 - Interrupts: the villager re-scores every 0.5 s with `RequestSwitchAction()`; the wolf only switches
-  when its action completes or fails, and picks with `RandomUtilityScoreAggregator`.
+  when its action completes or fails, and picks with `RandomScoreAggregator`.
 - `BrainUpdateType.Update` (villager) and `BrainUpdateType.Custom` (the wolf ticks its own brain).
-- A custom `IUtilityActionInjector` that hands the world service to the actions.
-- A `ScriptableUtilityAction` asset referenced through `ScriptableUtilityActionReference`.
+- A custom `IQuorumActionInjector` that hands the world service to the actions.
+- A `ScriptableQuorumAction` asset referenced through `ScriptableQuorumActionReference`.
 - Commitment (hysteresis): a running `VillageAction` keeps a minimum score, so two close actions do not flip on every re-score.
 
-Open `Window/DTech/Utility AI/Debugger` and `Window/DTech/Utility AI/Brain Map` in play mode to watch
+Open `Window/DTech/Quorum/Debugger` and `Window/DTech/Quorum/Brain Map` in play mode to watch
 the scores live.
 
 ## Benchmarks
-`com.dtech.utilityai.performance-tests` (`Tests/Performance`) measures brain creation, the per-frame
+`com.dtech.quorum.performance-tests` (`Tests/Performance`) measures brain creation, the per-frame
 tick, `Enable`/`Disable`, scoring and switch requests. The assembly is opt-in:
 
 1. Add `com.unity.test-framework.performance` to your project.
 2. Add `UNITY_INCLUDE_PERFORMANCE_TESTS` to the Scripting Define Symbols.
 
 Brain diagnostics are compiled into the Editor only, so a player run measures the brain without
-them. Add `UTILITYAI_DIAGNOSTICS` to the Scripting Define Symbols of the target platform to measure
+them. Add `QUORUM_DIAGNOSTICS` to the Scripting Define Symbols of the target platform to measure
 a player build with them instead - see [Diagnostics cost](#diagnostics-cost) for what that costs.
 
 Run it from **Test Runner** and read the numbers in **Window > Analysis > Performance Test Report**.
@@ -476,7 +477,7 @@ the diagnostics.
   consideration (none, constant, a composite of constants, a composite of blackboard lookups), both
   aggregators, and 1000 brains re-scoring in the same frame.
 - **Lifecycle** - creating and disposing brains (inline actions against
-  `ScriptableUtilityActionReference`), `Enable`/`Disable` at one and at a thousand brains.
+  `ScriptableQuorumActionReference`), `Enable`/`Disable` at one and at a thousand brains.
 - **Tick** - one brain, a thousand brains, and a thousand through the player loop.
 - **Switch requests** - immediate, delayed, and a thousand pending requests in one dispatch.
 - **Allocations** - four budgets asserted at zero bytes per call, so a regression fails the run
@@ -512,7 +513,7 @@ Lifecycle:
 | | time | GC |
 |---|---|---|
 | create 200 brains, inline actions | 17.28 ms | 43 / brain |
-| create 200 brains, `ScriptableUtilityActionReference` | 5.38 ms | 13 / brain |
+| create 200 brains, `ScriptableQuorumActionReference` | 5.38 ms | 13 / brain |
 | dispose 200 brains | 89 us | 0 |
 | `Enable` 1000 brains | 588 us | 0 |
 | `Disable` 1000 brains | 588 us | 0 |
@@ -523,7 +524,7 @@ Lifecycle:
 
 Creation is the one place that still costs: 86 us and 43 allocations per brain, because every action
 and consideration is cloned for that brain. Actions with no per-brain state belong in a
-`ScriptableUtilityAction` asset referenced through `ScriptableUtilityActionReference` - the asset is
+`ScriptableQuorumAction` asset referenced through `ScriptableQuorumActionReference` - the asset is
 shared, so the same brain costs 27 us and 13 allocations.
 
 Tick:
