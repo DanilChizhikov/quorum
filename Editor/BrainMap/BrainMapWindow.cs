@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Object = UnityEngine.Object;
 
 namespace DTech.UtilityAI.Editor
 {
@@ -28,8 +29,6 @@ namespace DTech.UtilityAI.Editor
 		private ObjectField _configField;
 		private Label _status;
 		private BrainConfig _builtConfig;
-		// Weak, like the registry itself: an open window must not keep a brain, and through it an agent
-		// and its context, alive for as long as it stays open.
 		private WeakReference<IUtilityBrainDebugInfo> _builtBrain;
 		private int _builtActionCount;
 
