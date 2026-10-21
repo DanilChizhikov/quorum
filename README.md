@@ -1,6 +1,7 @@
 # Quorum
 [![Unity Version](https://img.shields.io/badge/unity-6000.0+-000.svg)](https://unity3d.com/get-unity/download/archive)
 ![Unity Tests](https://github.com/DanilChizhikov/quorum/actions/workflows/tests.yml/badge.svg?branch=master)
+[![Donate](https://img.shields.io/badge/donate-DonationAlerts-f59c07.svg)](https://www.donationalerts.com/r/danilchizhikov)
 
 ## Overview
 Quorum is a utility AI for Unity: it picks the action with the best score every time a brain

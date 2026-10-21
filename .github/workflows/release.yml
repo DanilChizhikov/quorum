@@ -69,7 +69,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           file="$RUNNER_TEMP/$PACKAGE.$VERSION.unitypackage"
-          python3 -I .github/scripts/build-unitypackage.py . Assets/UtilityAI "$file"
+          python3 -I .github/scripts/build-unitypackage.py . Assets/Quorum "$file"
           echo "file=$file" >> "$GITHUB_OUTPUT"
 
       - name: Upload unitypackage
