@@ -7,11 +7,12 @@ namespace DTech.UtilityAI.Editor
 		MissingManagedType = 2,
 		EmptyActionList = 3,
 		DuplicateActionType = 4,
-		LegacyActionsNotUpgraded = 5,
-		EmptyScriptableActionReference = 6,
-		NullManagedReferenceElement = 7,
-		CompositeWithoutChildren = 8,
-		CompositeWithSingleChild = 9,
-		ActionWithoutScoreSource = 10,
+		EmptyScriptableActionReference = 5,
+		NullManagedReferenceElement = 6,
+		CompositeWithoutChildren = 7,
+		CompositeWithSingleChild = 8,
+		ActionWithoutScoreSource = 9,
+		InvalidFormula = 10,
+		UnknownFormulaVariable = 11,
 	}
 }

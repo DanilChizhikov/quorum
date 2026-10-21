@@ -73,6 +73,12 @@ namespace DTech.UtilityAI.Tests.Performance
 		}
 
 		[Test, Performance]
+		public void Score_SixActions_CompositeFormula_Max()
+		{
+			MeasureSingleBrainScore(PerfConsiderationKind.CompositeFormula);
+		}
+
+		[Test, Performance]
 		public void Score_OneThousandBrains_CompositeBlackboardCached_Max()
 		{
 			_set = CreateEnabledSet(BRAIN_COUNT, PerfConsiderationKind.CompositeBlackboardCached, null);

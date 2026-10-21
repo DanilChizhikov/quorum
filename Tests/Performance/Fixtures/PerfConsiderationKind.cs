@@ -9,5 +9,6 @@ namespace DTech.UtilityAI.Tests.Performance
 		CompositeBlackboardRaw = 4,
 		CompositeCurve = 5,
 		CompositeBlackboardCached = 6,
+		CompositeFormula = 7,
 	}
 }

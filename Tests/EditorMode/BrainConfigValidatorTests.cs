@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using DTech.Blackboard;
 using DTech.UtilityAI.Editor;
 using NUnit.Framework;
 using UnityEngine;
@@ -9,6 +10,7 @@ namespace DTech.UtilityAI.Tests.EditorMode
 	internal sealed class BrainConfigValidatorTests
 	{
 		private readonly List<BrainConfig> _configs = new();
+		private readonly List<BlackboardAsset> _blackboards = new();
 
 		[TearDown]
 		public void TearDown()
@@ -19,6 +21,12 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			}
 
 			_configs.Clear();
+			for (int i = 0; i < _blackboards.Count; i++)
+			{
+				Object.DestroyImmediate(_blackboards[i]);
+			}
+
+			_blackboards.Clear();
 		}
 
 		[Test]
@@ -146,6 +154,96 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			Assert.IsInstanceOf<MaxUtilityScoreAggregator>(config.ScoreAggregator);
 		}
 
+		[Test]
+		public void Validate_InvalidFormula_ReportsError()
+		{
+			var action = new TestUtilityAction(0.5f);
+			action.SetConsideration(new FormulaUtilityConsideration("1 +"));
+			BrainConfig config = CreateConfig(action);
+
+			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
+
+			AssertHasIssue(issues, BrainConfigIssueCode.InvalidFormula, BrainConfigIssueSeverity.Error);
+		}
+
+		[Test]
+		public void Validate_InvalidFormulaInsideComposite_ReportsError()
+		{
+			var action = new TestUtilityAction(0.5f);
+			action.SetConsideration(new CompositeUtilityConsideration(
+				ConsiderationCombineMode.Multiply,
+				new TestUtilityConsideration(0.5f),
+				new FormulaUtilityConsideration("clamp01(")));
+
+			BrainConfig config = CreateConfig(action);
+
+			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
+
+			AssertHasIssue(issues, BrainConfigIssueCode.InvalidFormula, BrainConfigIssueSeverity.Error);
+		}
+
+		[Test]
+		public void Validate_ValidFormula_ReportsNoFormulaIssue()
+		{
+			var action = new TestUtilityAction(0.5f);
+			action.SetConsideration(new FormulaUtilityConsideration("clamp01(Hunger / 100)"));
+			BrainConfig config = CreateConfig(action);
+
+			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
+
+			AssertHasNoIssue(issues, BrainConfigIssueCode.InvalidFormula);
+		}
+
+		[Test]
+		public void Validate_InvalidFormula_HasNoAutomaticFix()
+		{
+			Assert.IsFalse(BrainConfigIssueFixer.CanFix(BrainConfigIssueCode.InvalidFormula));
+		}
+
+		[Test]
+		public void Validate_FormulaNameMissingFromSchema_ReportsWarning()
+		{
+			var action = new TestUtilityAction(0.5f);
+			action.SetConsideration(new FormulaUtilityConsideration("clamp01(Hungr / 100)"));
+			BrainConfig config = CreateConfig(action);
+			config.SetBlackboardSchema(CreateSchema("Hunger"));
+
+			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
+
+			AssertHasIssue(issues, BrainConfigIssueCode.UnknownFormulaVariable, BrainConfigIssueSeverity.Warning);
+		}
+
+		[Test]
+		public void Validate_FormulaNameOnSchema_ReportsNoWarning()
+		{
+			var action = new TestUtilityAction(0.5f);
+			action.SetConsideration(new FormulaUtilityConsideration("clamp01(hunger / 100)"));
+			BrainConfig config = CreateConfig(action);
+			config.SetBlackboardSchema(CreateSchema("Hunger"));
+
+			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
+
+			AssertHasNoIssue(issues, BrainConfigIssueCode.UnknownFormulaVariable);
+		}
+
+		[Test]
+		public void Validate_WithoutSchema_ReportsNoUnknownNameWarning()
+		{
+			var action = new TestUtilityAction(0.5f);
+			action.SetConsideration(new FormulaUtilityConsideration("clamp01(Hungr / 100)"));
+			BrainConfig config = CreateConfig(action);
+
+			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
+
+			AssertHasNoIssue(issues, BrainConfigIssueCode.UnknownFormulaVariable);
+		}
+
+		[Test]
+		public void Validate_UnknownFormulaName_HasNoAutomaticFix()
+		{
+			Assert.IsFalse(BrainConfigIssueFixer.CanFix(BrainConfigIssueCode.UnknownFormulaVariable));
+		}
+
 		private static TestUtilityAction CreateScoredAction()
 		{
 			var action = new TestUtilityAction(0.5f);
@@ -172,6 +270,19 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			Assert.Fail($"Expected issue {code}. {DescribeIssues(issues)}");
 		}
 
+		private static void AssertHasNoIssue(List<BrainConfigIssue> issues, BrainConfigIssueCode code)
+		{
+			for (int i = 0; i < issues.Count; i++)
+			{
+				if (issues[i].Code != code)
+				{
+					continue;
+				}
+
+				Assert.Fail($"Unexpected issue {code}. {DescribeIssues(issues)}");
+			}
+		}
+
 		private static string DescribeIssues(List<BrainConfigIssue> issues)
 		{
 			var builder = new StringBuilder("Reported issues: ");
@@ -181,6 +292,18 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			}
 
 			return builder.ToString();
+		}
+
+		private BlackboardAsset CreateSchema(params string[] names)
+		{
+			var schema = ScriptableObject.CreateInstance<BlackboardAsset>();
+			for (int i = 0; i < names.Length; i++)
+			{
+				schema.AddVariable(names[i], typeof(float));
+			}
+
+			_blackboards.Add(schema);
+			return schema;
 		}
 
 		private BrainConfig CreateConfig(params UtilityAction[] actions)

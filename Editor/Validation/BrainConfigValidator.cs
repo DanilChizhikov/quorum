@@ -28,7 +28,6 @@ namespace DTech.UtilityAI.Editor
 			}
 
 			ValidateScoreAggregator(config, issues);
-			ValidateLegacyActions(config, issues);
 			ValidateActions(config, issues);
 			ValidateManagedTypes(config, issues);
 			ValidateGraph(config, issues);
@@ -47,21 +46,6 @@ namespace DTech.UtilityAI.Editor
 				BrainConfigIssueCode.MissingScoreAggregator,
 				"Score aggregator is not set: the brain logs an error and never picks an action.",
 				ScoreAggregatorPropertyPath));
-		}
-
-		private static void ValidateLegacyActions(BrainConfig config, List<BrainConfigIssue> issues)
-		{
-			if (!config.HasLegacyActions)
-			{
-				return;
-			}
-
-			issues.Add(new BrainConfigIssue(
-				config,
-				BrainConfigIssueSeverity.Warning,
-				BrainConfigIssueCode.LegacyActionsNotUpgraded,
-				"Config still stores actions as ScriptableObject assets. Upgrade them to config entries.",
-				ActionsPropertyPath));
 		}
 
 		private static void ValidateActions(BrainConfig config, List<BrainConfigIssue> issues)
@@ -177,8 +161,7 @@ namespace DTech.UtilityAI.Editor
 					ValidateNode(config, issues, actions[i], visited);
 				}
 			}
-
-			ValidateNode(config, issues, config.Consideration, visited);
+			
 			ValidateNode(config, issues, config.ScoreAggregator, visited);
 		}
 
@@ -190,6 +173,7 @@ namespace DTech.UtilityAI.Editor
 			}
 
 			ValidateComposite(config, issues, node);
+			ValidateFormulas(config, issues, node);
 			Type type = node.GetType();
 			IReadOnlyList<FieldInfo> fields = UtilitySerializableFieldCache.GetFields(type);
 			for (int i = 0; i < fields.Count; i++)
@@ -233,6 +217,43 @@ namespace DTech.UtilityAI.Editor
 
 					ValidateNode(config, issues, element, visited);
 				}
+			}
+		}
+
+		private static void ValidateFormulas(BrainConfig config, List<BrainConfigIssue> issues, object node)
+		{
+			Type type = node.GetType();
+			IReadOnlyList<FieldInfo> fields = UtilitySerializableFieldCache.GetFields(type);
+			for (int i = 0; i < fields.Count; i++)
+			{
+				FieldInfo field = fields[i];
+				if (field.FieldType != typeof(string) || !Attribute.IsDefined(field, typeof(UtilityFormulaAttribute)))
+				{
+					continue;
+				}
+
+				if (!UtilityFormulaCompiler.TryCompile(field.GetValue(node) as string, out UtilityFormulaProgram program, out UtilityFormulaError error))
+				{
+					issues.Add(new BrainConfigIssue(
+						config,
+						BrainConfigIssueSeverity.Error,
+						BrainConfigIssueCode.InvalidFormula,
+						$"{UtilityTypeRegistry.GetDisplayName(type)} has an invalid formula in {field.Name}: {error}."));
+
+					continue;
+				}
+
+				string unknown = UtilityFormulaSchema.GetUnknownNames(config.BlackboardSchema, program.VariableNames);
+				if (string.IsNullOrEmpty(unknown))
+				{
+					continue;
+				}
+
+				issues.Add(new BrainConfigIssue(
+					config,
+					BrainConfigIssueSeverity.Warning,
+					BrainConfigIssueCode.UnknownFormulaVariable,
+					$"{UtilityTypeRegistry.GetDisplayName(type)} reads names in {field.Name} that the blackboard schema does not have: {unknown}."));
 			}
 		}
 

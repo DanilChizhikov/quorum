@@ -12,8 +12,8 @@ namespace DTech.UtilityAI.Editor
 		private const string UpdateTypePropertyName = "_updateType";
 		private const string SwitchActionTypePropertyName = "_switchActionType";
 		private const string ActionsPropertyName = "_actionEntries";
-		private const string ConsiderationPropertyName = "_consideration";
 		private const string ScoreAggregatorPropertyName = "_scoreAggregator";
+		private const string BlackboardSchemaPropertyName = "_blackboardSchema";
 		private const string FixLabel = "Fix";
 		private const float FixButtonWidth = 60f;
 		private const string LiveTitle = "Live";
@@ -27,8 +27,8 @@ namespace DTech.UtilityAI.Editor
 		private UtilityActionListDrawProvider _actionsDrawProvider;
 		private SerializedProperty _updateTypeProperty;
 		private SerializedProperty _switchActionTypeProperty;
-		private SerializedProperty _considerationProperty;
 		private SerializedProperty _scoreAggregatorProperty;
+		private SerializedProperty _blackboardSchemaProperty;
 		private bool _issuesDirty = true;
 
 		public override void OnInspectorGUI()
@@ -36,14 +36,15 @@ namespace DTech.UtilityAI.Editor
 			serializedObject.Update();
 			DrawIssues();
 			DrawLiveBrains();
+
 			using (new EditorGUI.DisabledScope(Application.isPlaying))
 			{
 				EditorGUILayout.PropertyField(_updateTypeProperty);
 				EditorGUILayout.PropertyField(_switchActionTypeProperty);
+				EditorGUILayout.PropertyField(_blackboardSchemaProperty);
 				EditorGUILayout.Space();
 				_actionsDrawProvider.Draw();
 				EditorGUILayout.Space();
-				EditorGUILayout.PropertyField(_considerationProperty);
 				EditorGUILayout.PropertyField(_scoreAggregatorProperty);
 			}
 
@@ -86,8 +87,8 @@ namespace DTech.UtilityAI.Editor
 		{
 			_updateTypeProperty = serializedObject.FindProperty(UpdateTypePropertyName);
 			_switchActionTypeProperty = serializedObject.FindProperty(SwitchActionTypePropertyName);
-			_considerationProperty = serializedObject.FindProperty(ConsiderationPropertyName);
 			_scoreAggregatorProperty = serializedObject.FindProperty(ScoreAggregatorPropertyName);
+			_blackboardSchemaProperty = serializedObject.FindProperty(BlackboardSchemaPropertyName);
 			SerializedProperty actionsProperty = serializedObject.FindProperty(ActionsPropertyName);
 			_actionsDrawProvider = new UtilityActionListDrawProvider(serializedObject, actionsProperty);
 			_issuesDirty = true;
@@ -125,13 +126,15 @@ namespace DTech.UtilityAI.Editor
 
 			for (int i = 0; i < _issues.Count; i++)
 			{
-				DrawIssue(_issues[i]);
+				BrainConfigIssue issue = _issues[i];
+				DrawIssue(issue);
 			}
 		}
 
 		private void DrawIssue(in BrainConfigIssue issue)
 		{
-			EditorGUILayout.HelpBox(issue.Message, GetMessageType(issue.Severity));
+			MessageType messageType = GetMessageType(issue.Severity);
+			EditorGUILayout.HelpBox(issue.Message, messageType);
 			if (!BrainConfigIssueFixer.CanFix(issue.Code))
 			{
 				return;

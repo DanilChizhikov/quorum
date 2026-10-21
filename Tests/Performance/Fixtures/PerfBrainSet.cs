@@ -241,6 +241,17 @@ namespace DTech.UtilityAI.Tests.Performance
 
 					return new CompositeUtilityConsideration(ConsiderationCombineMode.Multiply, children);
 				}
+				case PerfConsiderationKind.CompositeFormula:
+				{
+					var children = new UtilityConsideration[setup.ConsiderationCount];
+					for (int i = 0; i < children.Length; i++)
+					{
+						string key = _floatKeys[(actionIndex + i) % _floatKeys.Length];
+						children[i] = new FormulaUtilityConsideration($"clamp01({key} * 2)");
+					}
+
+					return new CompositeUtilityConsideration(ConsiderationCombineMode.Multiply, children);
+				}
 				case PerfConsiderationKind.CompositeCurve:
 				{
 					var children = new UtilityConsideration[setup.ConsiderationCount];
