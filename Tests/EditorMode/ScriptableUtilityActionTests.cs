@@ -1,5 +1,7 @@
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace DTech.UtilityAI.Tests.EditorMode
 {
@@ -91,6 +93,8 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			var action = ScriptableObject.CreateInstance<TestScriptableUtilityAction>();
 			var wrongContext = new WrongMockUtilityContext(new WrongMockAgent(), _blackboard);
 			
+			LogAssert.Expect(LogType.Error, new Regex("expects context MockUtilityContext but got WrongMockUtilityContext"));
+			
 			action.Enter(wrongContext);
 			
 			Assert.That(action.EnterCalled, Is.False);
@@ -102,6 +106,8 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		{
 			var action = ScriptableObject.CreateInstance<TestScriptableUtilityAction>();
 			var wrongContext = new WrongMockUtilityContext(new WrongMockAgent(), _blackboard);
+			
+			LogAssert.Expect(LogType.Error, new Regex("expects context MockUtilityContext but got WrongMockUtilityContext"));
 			
 			UtilityActionState result = action.Tick(wrongContext);
 			
@@ -115,6 +121,8 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			var action = ScriptableObject.CreateInstance<TestScriptableUtilityAction>();
 			var wrongContext = new WrongMockUtilityContext(new WrongMockAgent(), _blackboard);
 			
+			LogAssert.Expect(LogType.Error, new Regex("expects context MockUtilityContext but got WrongMockUtilityContext"));
+			
 			float utility = action.CalculateUtility(wrongContext);
 			
 			Assert.That(utility, Is.EqualTo(0f));
@@ -126,6 +134,8 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		{
 			var action = ScriptableObject.CreateInstance<TestScriptableUtilityAction>();
 			var wrongContext = new WrongMockUtilityContext(new WrongMockAgent(), _blackboard);
+			
+			LogAssert.Expect(LogType.Error, new Regex("expects context MockUtilityContext but got WrongMockUtilityContext"));
 			
 			action.Exit(wrongContext);
 			

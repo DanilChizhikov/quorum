@@ -33,8 +33,13 @@ namespace DTech.UtilityAI
 				$"Player loop has no {systemType.Name} phase: another package replaced the player loop.");
 		}
 
+		/// <summary>
+		/// A phase keeps one system per type: a second entry of the same type would dispatch an older,
+		/// already disposed instance that still sits in a loop snapshot someone restored.
+		/// </summary>
 		public static void AddSystem(ref this PlayerLoopSystem loopSystem, Type systemType, PlayerLoopSystem.UpdateFunction update)
 		{
+			loopSystem.RemoveSystem(systemType, false);
 			loopSystem.subSystemList = loopSystem.subSystemList.Add(new PlayerLoopSystem
 			{
 				type = systemType,

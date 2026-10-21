@@ -16,6 +16,9 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		[SetUp]
 		public void Setup()
 		{
+			// Another fixture may have left a service in the loop; the snapshot has to be clean,
+			// otherwise TearDown puts that stale entry back.
+			UtilityUpdateService.Instance.Dispose();
 			_originalLoop = PlayerLoop.GetCurrentPlayerLoop();
 		}
 
