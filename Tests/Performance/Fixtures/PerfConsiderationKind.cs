@@ -6,5 +6,7 @@ namespace DTech.UtilityAI.Tests.Performance
 		Constant = 1,
 		CompositeConstants = 2,
 		CompositeBlackboard = 3,
+		CompositeBlackboardRaw = 4,
+		CompositeCurve = 5,
 	}
 }

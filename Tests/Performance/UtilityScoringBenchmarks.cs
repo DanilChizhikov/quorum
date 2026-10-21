@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
 
@@ -54,6 +55,36 @@ namespace DTech.UtilityAI.Tests.Performance
 		}
 
 		[Test, Performance]
+		public void Score_SixActions_CompositeBlackboardRaw_Max()
+		{
+			MeasureSingleBrainScore(PerfConsiderationKind.CompositeBlackboardRaw);
+		}
+
+		[Test, Performance]
+		public void Score_SixActions_CompositeCurve_Max()
+		{
+			MeasureSingleBrainScore(PerfConsiderationKind.CompositeCurve);
+		}
+
+		[Test, Performance]
+		public void Aggregate_SixActions_ConstantConsideration_Max()
+		{
+			MeasureSingleBrainAggregate(PerfConsiderationKind.Constant);
+		}
+
+		[Test, Performance]
+		public void Aggregate_SixActions_CompositeConstants_Max()
+		{
+			MeasureSingleBrainAggregate(PerfConsiderationKind.CompositeConstants);
+		}
+
+		[Test, Performance]
+		public void Aggregate_SixActions_CompositeBlackboard_Max()
+		{
+			MeasureSingleBrainAggregate(PerfConsiderationKind.CompositeBlackboard);
+		}
+
+		[Test, Performance]
 		public void Score_SixActions_CompositeBlackboard_Random()
 		{
 			_set = CreateEnabledSet(1, PerfConsiderationKind.CompositeBlackboard, new RandomUtilityScoreAggregator());
@@ -102,6 +133,22 @@ namespace DTech.UtilityAI.Tests.Performance
 			PerfUtilityBrain brain = _set.First;
 
 			Measure.Method(() => brain.RequestSwitchAction())
+				.WarmupCount(10)
+				.MeasurementCount(100)
+				.IterationsPerMeasurement(100)
+				.GC()
+				.Run();
+		}
+
+		private void MeasureSingleBrainAggregate(PerfConsiderationKind considerationKind)
+		{
+			_set = CreateEnabledSet(1, considerationKind, null);
+			PerfUtilityBrain brain = _set.First;
+			UtilityScoreAggregator aggregator = brain.RuntimeConfig.ScoreAggregator;
+			IReadOnlyList<IUtilityAction> actions = brain.Actions;
+			IUtilityContext context = brain.BrainContext;
+
+			Measure.Method(() => aggregator.Aggregate(actions, context))
 				.WarmupCount(10)
 				.MeasurementCount(100)
 				.IterationsPerMeasurement(100)

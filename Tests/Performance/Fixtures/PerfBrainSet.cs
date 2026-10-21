@@ -177,7 +177,10 @@ namespace DTech.UtilityAI.Tests.Performance
 					continue;
 				}
 
-				var action = new PerfUtilityAction();
+				UtilityAction action = setup.ActionKind == PerfActionKind.InlineCompleting
+					? (UtilityAction)new PerfCompletingUtilityAction()
+					: new PerfUtilityAction();
+
 				action.SetConsideration(consideration);
 				actions[i] = action;
 			}
@@ -214,6 +217,26 @@ namespace DTech.UtilityAI.Tests.Performance
 					for (int i = 0; i < children.Length; i++)
 					{
 						children[i] = new PerfBlackboardConsideration(_floatKeys[(actionIndex + i) % _floatKeys.Length]);
+					}
+
+					return new CompositeUtilityConsideration(ConsiderationCombineMode.Multiply, children);
+				}
+				case PerfConsiderationKind.CompositeBlackboardRaw:
+				{
+					var children = new UtilityConsideration[setup.ConsiderationCount];
+					for (int i = 0; i < children.Length; i++)
+					{
+						children[i] = new PerfBlackboardRawConsideration(_floatKeys[(actionIndex + i) % _floatKeys.Length]);
+					}
+
+					return new CompositeUtilityConsideration(ConsiderationCombineMode.Multiply, children);
+				}
+				case PerfConsiderationKind.CompositeCurve:
+				{
+					var children = new UtilityConsideration[setup.ConsiderationCount];
+					for (int i = 0; i < children.Length; i++)
+					{
+						children[i] = new PerfCurveConsideration(GetScore(actionIndex + i, setup.ActionCount + children.Length));
 					}
 
 					return new CompositeUtilityConsideration(ConsiderationCombineMode.Multiply, children);

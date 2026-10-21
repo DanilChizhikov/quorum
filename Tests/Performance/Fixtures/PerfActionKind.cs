@@ -4,5 +4,6 @@ namespace DTech.UtilityAI.Tests.Performance
 	{
 		Inline = 0,
 		ScriptableReference = 1,
+		InlineCompleting = 2,
 	}
 }

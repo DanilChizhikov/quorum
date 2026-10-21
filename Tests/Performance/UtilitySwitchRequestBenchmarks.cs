@@ -69,6 +69,20 @@ namespace DTech.UtilityAI.Tests.Performance
 		}
 
 		[Test, Performance]
+		public void Switch_SixActions_EveryTick()
+		{
+			_set = CreateEnabledSet(1, PerfActionKind.InlineCompleting);
+			PerfUtilityBrain brain = _set.First;
+
+			Measure.Method(() => brain.Update())
+				.WarmupCount(10)
+				.MeasurementCount(100)
+				.IterationsPerMeasurement(100)
+				.GC()
+				.Run();
+		}
+
+		[Test, Performance]
 		public void Dispatch_OneThousandPendingRequests()
 		{
 			_set = CreateEnabledSet(BRAIN_COUNT);
@@ -82,13 +96,17 @@ namespace DTech.UtilityAI.Tests.Performance
 				.Run();
 		}
 
-		private static PerfBrainSet CreateEnabledSet(int brainCount)
+		private static PerfBrainSet CreateEnabledSet(int brainCount) =>
+			CreateEnabledSet(brainCount, PerfActionKind.Inline);
+
+		private static PerfBrainSet CreateEnabledSet(int brainCount, PerfActionKind actionKind)
 		{
 			var setup = new PerfBrainSetup(
 				brainCount,
 				ACTION_COUNT,
 				CONSIDERATION_COUNT,
-				PerfConsiderationKind.Constant);
+				PerfConsiderationKind.Constant,
+				actionKind);
 
 			PerfBrainSet set = PerfBrainSet.Create(setup);
 			set.EnableAll();
