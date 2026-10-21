@@ -36,7 +36,7 @@ namespace DTech.UtilityAI
 
 		public override void Initialize(IUtilityContext context)
 		{
-			Bind(context.Blackboard);
+			Bind(context?.Blackboard);
 		}
 
 		public override UtilityConsideration Clone()
