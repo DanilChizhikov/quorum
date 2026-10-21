@@ -231,6 +231,16 @@ namespace DTech.UtilityAI.Tests.Performance
 
 					return new CompositeUtilityConsideration(ConsiderationCombineMode.Multiply, children);
 				}
+				case PerfConsiderationKind.CompositeBlackboardCached:
+				{
+					var children = new UtilityConsideration[setup.ConsiderationCount];
+					for (int i = 0; i < children.Length; i++)
+					{
+						children[i] = new PerfBlackboardCachedConsideration(_floatKeys[(actionIndex + i) % _floatKeys.Length]);
+					}
+
+					return new CompositeUtilityConsideration(ConsiderationCombineMode.Multiply, children);
+				}
 				case PerfConsiderationKind.CompositeCurve:
 				{
 					var children = new UtilityConsideration[setup.ConsiderationCount];

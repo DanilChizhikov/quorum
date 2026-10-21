@@ -4,51 +4,60 @@ using UnityEngine;
 
 namespace DTech.UtilityAI
 {
-	internal sealed class BrainSwitchStateRequest : IDisposable
+	internal sealed class BrainSwitchStateRequest
 	{
 		private readonly Action _completeCallback;
-		private readonly CancellationToken _token;
-		private readonly CancellationTokenSource _tokenSource;
-		private readonly float _completeTime;
-		
-		private bool _isDisposed;
+		private readonly Action _cachedUpdate;
 
-		public BrainSwitchStateRequest(float delay, Action completeCallback, CancellationToken token)
+		private CancellationToken _token;
+		private float _completeTime;
+		private bool _isActive;
+
+		public BrainSwitchStateRequest(Action completeCallback)
+		{
+			_completeCallback = completeCallback;
+			_cachedUpdate = Update;
+		}
+
+		public void Arm(float delay, CancellationToken token)
 		{
 			_token = token;
-			_completeCallback = completeCallback;
-			_tokenSource = new CancellationTokenSource();
 			_completeTime = Time.time + delay;
-			UtilityUpdateService.Instance.RegisterUpdate(Update);
-		}
-		
-		public void Dispose()
-		{
-			if (_isDisposed)
+			if (_isActive)
 			{
 				return;
 			}
-			
-			UtilityUpdateService.Instance.UnregisterUpdate(Update);
-			_tokenSource?.Cancel();
-			_tokenSource?.Dispose();
-			_isDisposed = true;
+
+			_isActive = true;
+			UtilityUpdateService.Instance.RegisterUpdate(_cachedUpdate);
+		}
+
+		public void Cancel()
+		{
+			if (!_isActive)
+			{
+				return;
+			}
+
+			_isActive = false;
+			_token = default;
+			UtilityUpdateService.Instance.UnregisterUpdate(_cachedUpdate);
 		}
 
 		private void Update()
 		{
-			if (_isDisposed)
+			if (!_isActive)
 			{
 				return;
 			}
 
-			if (_tokenSource.IsCancellationRequested ||
-				_token.IsCancellationRequested ||
-				_completeTime <= Time.time)
+			if (!_token.IsCancellationRequested && _completeTime > Time.time)
 			{
-				_completeCallback?.Invoke();
-				Dispose();
+				return;
 			}
+
+			Cancel();
+			_completeCallback?.Invoke();
 		}
 	}
 }

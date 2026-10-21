@@ -44,7 +44,7 @@ namespace DTech.UtilityAI.Tests.Performance
 			Measure.Method(() => brain.RequestSwitchAction())
 				.WarmupCount(10)
 				.MeasurementCount(100)
-				.IterationsPerMeasurement(100)
+				.IterationsPerMeasurement(1000)
 				.GC()
 				.Run();
 		}
@@ -77,7 +77,7 @@ namespace DTech.UtilityAI.Tests.Performance
 			Measure.Method(() => brain.Update())
 				.WarmupCount(10)
 				.MeasurementCount(100)
-				.IterationsPerMeasurement(100)
+				.IterationsPerMeasurement(1000)
 				.GC()
 				.Run();
 		}

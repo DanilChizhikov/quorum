@@ -40,13 +40,7 @@ namespace DTech.UtilityAI.Tests.Performance
 				Assert.Ignore("GC.GetAllocatedBytesForCurrentThread is not supported on this runtime.");
 			}
 
-			var setup = new PerfBrainSetup(
-				BRAIN_COUNT,
-				ACTION_COUNT,
-				CONSIDERATION_COUNT,
-				PerfConsiderationKind.CompositeBlackboard);
-
-			_set = PerfBrainSet.Create(setup);
+			_set = CreateSet(BRAIN_COUNT, PerfConsiderationKind.CompositeBlackboard);
 			_set.EnableAll();
 			Action tick = _set.TickAll;
 			Warmup(tick);
@@ -57,6 +51,82 @@ namespace DTech.UtilityAI.Tests.Performance
 				bytesPerCall,
 				NoAllocationsBudget,
 				nameof(Tick_SteadyState_OneThousandBrains_NoAllocations));
+		}
+
+		[Test]
+		public void EnableDisable_Cycle_SingleBrain_NoAllocations()
+		{
+			if (!IsAllocationTrackingSupported())
+			{
+				Assert.Ignore("GC.GetAllocatedBytesForCurrentThread is not supported on this runtime.");
+			}
+
+			_set = CreateSet(1, PerfConsiderationKind.Constant);
+			PerfUtilityBrain brain = _set.First;
+			Action cycle = () =>
+			{
+				brain.Enable();
+				brain.Disable();
+			};
+
+			Warmup(cycle);
+
+			long bytesPerCall = MeasureBytesPerCall(cycle, MeasurementIterations);
+
+			AssertWithinBudget(
+				bytesPerCall,
+				NoAllocationsBudget,
+				nameof(EnableDisable_Cycle_SingleBrain_NoAllocations));
+		}
+
+		[Test]
+		public void RequestSwitchAction_Immediate_NoAllocations()
+		{
+			if (!IsAllocationTrackingSupported())
+			{
+				Assert.Ignore("GC.GetAllocatedBytesForCurrentThread is not supported on this runtime.");
+			}
+
+			_set = CreateSet(1, PerfConsiderationKind.Constant);
+			_set.EnableAll();
+			PerfUtilityBrain brain = _set.First;
+			Action request = () => brain.RequestSwitchAction();
+			Warmup(request);
+
+			long bytesPerCall = MeasureBytesPerCall(request, MeasurementIterations);
+
+			AssertWithinBudget(
+				bytesPerCall,
+				NoAllocationsBudget,
+				nameof(RequestSwitchAction_Immediate_NoAllocations));
+		}
+
+		[Test]
+		public void Score_SixActions_CompositeBlackboardCached_NoAllocations()
+		{
+			if (!IsAllocationTrackingSupported())
+			{
+				Assert.Ignore("GC.GetAllocatedBytesForCurrentThread is not supported on this runtime.");
+			}
+
+			_set = CreateSet(1, PerfConsiderationKind.CompositeBlackboardCached);
+			_set.EnableAll();
+			PerfUtilityBrain brain = _set.First;
+			Action request = () => brain.RequestSwitchAction();
+			Warmup(request);
+
+			long bytesPerCall = MeasureBytesPerCall(request, MeasurementIterations);
+
+			AssertWithinBudget(
+				bytesPerCall,
+				NoAllocationsBudget,
+				nameof(Score_SixActions_CompositeBlackboardCached_NoAllocations));
+		}
+
+		private static PerfBrainSet CreateSet(int brainCount, PerfConsiderationKind considerationKind)
+		{
+			var setup = new PerfBrainSetup(brainCount, ACTION_COUNT, CONSIDERATION_COUNT, considerationKind);
+			return PerfBrainSet.Create(setup);
 		}
 
 		private static bool IsAllocationTrackingSupported()

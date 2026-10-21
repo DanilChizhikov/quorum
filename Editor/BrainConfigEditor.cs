@@ -92,10 +92,12 @@ namespace DTech.UtilityAI.Editor
 			_actionsDrawProvider = new UtilityActionListDrawProvider(serializedObject, actionsProperty);
 			_issuesDirty = true;
 			Undo.undoRedoPerformed += OnUndoRedoPerformed;
+			UtilityBrainDebugRegistry.AddObserver();
 		}
 
 		private void OnDisable()
 		{
+			UtilityBrainDebugRegistry.RemoveObserver();
 			Undo.undoRedoPerformed -= OnUndoRedoPerformed;
 			_actionsDrawProvider?.Dispose();
 			_actionsDrawProvider = null;

@@ -69,7 +69,7 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		}
 
 		[Test]
-		public void Run_DoesNotLeakRuntimeConfigClones()
+		public void Run_DoesNotLeakConfigInstances()
 		{
 			int before = CountConfigs();
 			var cases = new List<UtilityScoringCase>

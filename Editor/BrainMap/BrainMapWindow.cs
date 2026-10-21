@@ -58,6 +58,16 @@ namespace DTech.UtilityAI.Editor
 			return null;
 		}
 
+		private void OnEnable()
+		{
+			UtilityBrainDebugRegistry.AddObserver();
+		}
+
+		private void OnDisable()
+		{
+			UtilityBrainDebugRegistry.RemoveObserver();
+		}
+
 		private void CreateGUI()
 		{
 			rootVisualElement.AddToClassList("uai-root");

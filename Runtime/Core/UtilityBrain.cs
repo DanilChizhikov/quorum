@@ -1,20 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 using DTech.UtilityAI.Diagnostics;
 #endif
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace DTech.UtilityAI
 {
 	public abstract class UtilityBrain<TConfig, TContext> : IUtilityBrain
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 		, IUtilityBrainDebugInfo
 #endif
 		where TConfig : BrainConfig
-		where TContext : IUtilityContext
+		where TContext : class, IUtilityContext
 	{
 		public event Action OnActionChanged;
 		public event Action<UtilityActionState> OnActionStateChange;
@@ -22,9 +21,12 @@ namespace DTech.UtilityAI
 		private readonly TContext _context;
 		private readonly IBrainUpdateProvider _updateProvider;
 		private readonly IUtilityAction[] _actions;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-		private readonly TConfig _sourceConfig;
+		private readonly Action _cachedUpdate;
+		private readonly SwitchActionType _switchActionType;
+		private readonly UtilityScoreAggregator _scoreAggregator;
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 		private readonly UtilityBrainSwitchLog _switchLog = new();
+		private readonly int _debugToken;
 #endif
 		
 		public bool IsEnabled { get; private set; }
@@ -33,11 +35,11 @@ namespace DTech.UtilityAI
 		
 		protected TConfig Config { get; }
 		protected TContext Context => _context;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-		BrainConfig IUtilityBrainDebugInfo.SourceConfig => _sourceConfig;
-		string IUtilityBrainDebugInfo.ConfigName => _sourceConfig != null ? _sourceConfig.name : string.Empty;
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
+		BrainConfig IUtilityBrainDebugInfo.SourceConfig => Config;
+		string IUtilityBrainDebugInfo.ConfigName => Config != null ? Config.name : string.Empty;
 		BrainUpdateType IUtilityBrainDebugInfo.UpdateType => UpdateType;
-		SwitchActionType IUtilityBrainDebugInfo.SwitchActionType => Config != null ? Config.SwitchActionType : default;
+		SwitchActionType IUtilityBrainDebugInfo.SwitchActionType => _switchActionType;
 		bool IUtilityBrainDebugInfo.IsEnabled => IsEnabled;
 		IUtilityContext IUtilityBrainDebugInfo.Context => _context;
 		IReadOnlyList<IUtilityAction> IUtilityBrainDebugInfo.Actions => _actions;
@@ -55,16 +57,16 @@ namespace DTech.UtilityAI
 
 		public UtilityBrain(TConfig config, TContext context, IUtilityActionInjector injector = null)
 		{
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-			_sourceConfig = config;
-#endif
 			_context = context;
-			Config = (TConfig)config.CreateRuntimeInstance();
-			UpdateType = Config.UpdateType;
+			_cachedUpdate = Update;
+			Config = config;
+			UpdateType = config.UpdateType;
+			_switchActionType = config.SwitchActionType;
+			_scoreAggregator = config.ScoreAggregator?.Clone();
 			_updateProvider = UpdateUtility.GetProvider(UpdateType);
-			_actions = CreateActions(Config, context, injector ?? new NullUtilityActionInjector());
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-			UtilityBrainDebugRegistry.Register(this);
+			_actions = CreateActions(config, context, injector ?? new NullUtilityActionInjector());
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
+			_debugToken = UtilityBrainDebugRegistry.Register(this);
 #endif
 		}
 		
@@ -78,9 +80,9 @@ namespace DTech.UtilityAI
 			_currentAction = null;
 			_hasCurrentAction = false;
 			_lastActionState = UtilityActionState.Running;
-			_updateProvider.AddUpdate(Update);
+			_updateProvider.AddUpdate(_cachedUpdate);
 			IsEnabled = true;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 			UtilityProfilerCounters.BrainEnabled();
 #endif
 			RequestSwitchAction();
@@ -96,7 +98,8 @@ namespace DTech.UtilityAI
 			_isRequestingSwitchAction = true;
 			if (delay > 0f)
 			{
-				_request = new BrainSwitchStateRequest(delay, OnRequestSwitchActionCompleted, token);
+				_request ??= new BrainSwitchStateRequest(OnRequestSwitchActionCompleted);
+				_request.Arm(delay, token);
 			}
 			else
 			{
@@ -118,7 +121,7 @@ namespace DTech.UtilityAI
 				OnActionStateChange?.Invoke(actionState);
 			}
 			
-			if (Config.SwitchActionType == SwitchActionType.Manual)
+			if (_switchActionType == SwitchActionType.Manual)
 			{
 				switch (actionState)
 				{
@@ -169,13 +172,12 @@ namespace DTech.UtilityAI
 				return;
 			}
 			
-			_request?.Dispose();
-			_request = null;
+			_request?.Cancel();
 			_isRequestingSwitchAction = false;
-			_updateProvider.RemoveUpdate(Update);
+			_updateProvider.RemoveUpdate(_cachedUpdate);
 			SetCurrentAction(null);
 			IsEnabled = false;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 			UtilityProfilerCounters.BrainDisabled();
 #endif
 		}
@@ -197,9 +199,8 @@ namespace DTech.UtilityAI
 				}
 			}
 			
-			DestroyRuntimeConfig(Config);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-			UtilityBrainDebugRegistry.Unregister(this);
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
+			UtilityBrainDebugRegistry.Unregister(_debugToken);
 #endif
 		}
 
@@ -214,35 +215,20 @@ namespace DTech.UtilityAI
 			var actions = new List<IUtilityAction>(configActions.Count);
 			for (int i = 0; i < configActions.Count; i++)
 			{
-				UtilityAction action = configActions[i];
-				if (action == null)
+				UtilityAction configAction = configActions[i];
+				if (configAction == null)
 				{
 					continue;
 				}
-				
+
+				UtilityAction action = configAction.Clone();
 				injector.Inject(action);
 				action.Initialize(context);
+				action.InitializeConsideration(context);
 				actions.Add(action);
 			}
 
 			return actions.ToArray();
-		}
-
-		private static void DestroyRuntimeConfig(BrainConfig config)
-		{
-			if (config == null)
-			{
-				return;
-			}
-
-			if (Application.isPlaying)
-			{
-				Object.Destroy(config);
-			}
-			else
-			{
-				Object.DestroyImmediate(config);
-			}
 		}
 
 		private void SetCurrentAction(IUtilityAction action, bool restart = false)
@@ -251,7 +237,7 @@ namespace DTech.UtilityAI
 			{
 				return;
 			}
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 			
 			IUtilityAction previousAction = _hasCurrentAction ? _currentAction : null;
 #endif
@@ -268,7 +254,7 @@ namespace DTech.UtilityAI
 			{
 				_currentAction.Enter(_context);
 			}
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 			
 			RecordSwitch(previousAction, _currentAction);
 #endif
@@ -278,17 +264,16 @@ namespace DTech.UtilityAI
 		
 		private void OnRequestSwitchActionCompleted()
 		{
-			_request?.Dispose();
-			_request = null;
+			_request?.Cancel();
 			_isRequestingSwitchAction = false;
-			UtilityScoreAggregator scoreAggregator = Config.ScoreAggregator;
+			UtilityScoreAggregator scoreAggregator = _scoreAggregator;
 			if (scoreAggregator == null)
 			{
 				Debug.LogError($"[{GetType().Name}] Score aggregator is not set in config {Config.name}!");
 				return;
 			}
 			
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 			int actionIndex;
 			using (UtilityProfilerCounters.SelectActionMarker.Auto())
 			{
@@ -302,12 +287,12 @@ namespace DTech.UtilityAI
 			bool restart = action != null && action == _currentAction && _lastActionState != UtilityActionState.Running;
 			SetCurrentAction(action, restart);
 		}
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 		
 		private void RecordSwitch(IUtilityAction fromAction, IUtilityAction toAction)
 		{
 			float score = float.NaN;
-			if (toAction != null)
+			if (toAction != null && UtilityBrainDebugRegistry.IsObserved)
 			{
 				try
 				{

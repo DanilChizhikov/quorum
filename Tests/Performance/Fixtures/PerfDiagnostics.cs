@@ -1,4 +1,4 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 using DTech.UtilityAI.Diagnostics;
 #endif
 
@@ -8,7 +8,7 @@ namespace DTech.UtilityAI.Tests.Performance
 	{
 		public static void ClearBrainRegistry()
 		{
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 			UtilityBrainDebugRegistry.Clear();
 #endif
 		}

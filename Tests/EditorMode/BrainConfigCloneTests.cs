@@ -32,13 +32,13 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		}
 		
 		[Test]
-		public void Brain_UsesClonedConfig_NotSourceAsset()
+		public void Brain_UsesSourceConfig_WithoutCloningIt()
 		{
 			_config.SetActions(new UtilityAction[] { new TestUtilityAction(1f) });
 			
 			using var brain = new TestUtilityBrain(_config, _context);
-			
-			Assert.That(brain.RuntimeConfig, Is.Not.SameAs(_config));
+
+			Assert.That(brain.SourceConfig, Is.SameAs(_config));
 		}
 		
 		[Test]
@@ -103,16 +103,26 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		}
 		
 		[Test]
-		public void Dispose_DestroysClonedConfig()
+		public void Dispose_DoesNotDestroySourceConfig()
 		{
 			_config.SetActions(new UtilityAction[] { new TestUtilityAction(1f) });
 			var brain = new TestUtilityBrain(_config, _context);
-			TestBrainConfig runtimeConfig = brain.RuntimeConfig;
-			
+
 			brain.Dispose();
-			
-			Assert.That(runtimeConfig == null, Is.True);
+
 			Assert.That(_config == null, Is.False);
+		}
+
+		[Test]
+		public void Brain_DoesNotInitializeSourceConfigActions()
+		{
+			var sourceAction = new TestUtilityAction(1f);
+			_config.SetActions(new UtilityAction[] { sourceAction });
+
+			using var brain = new TestUtilityBrain(_config, _context);
+
+			Assert.That(sourceAction.InitializeCount, Is.EqualTo(0));
+			Assert.That(((TestUtilityAction)brain.Actions[0]).InitializeCount, Is.EqualTo(1));
 		}
 	}
 }

@@ -1,8 +1,10 @@
 """Finds the Unity test modes the package has tests for, so the test workflow runs only those.
 
 A test assembly is an .asmdef that references nunit.framework.dll or is constrained to UNITY_INCLUDE_TESTS. It runs in
-editmode when it is limited to the Editor platform and in playmode otherwise. A mode counts only when one of its
-assemblies holds at least one test method, so a mode without tests is skipped instead of failing the workflow.
+editmode when it is limited to the Editor platform and in playmode otherwise. An assembly whose defineConstraints ask
+for more than UNITY_INCLUDE_TESTS is compiled out of the CI project, so it is left out as well. A mode counts only when
+one of its assemblies holds at least one test method, so a mode without tests is skipped instead of failing the
+workflow.
 
 Usage: python3 detect-test-modes.py <package-root>
 Prints the modes as a JSON list and writes `modes` to $GITHUB_OUTPUT when it is set.
@@ -14,6 +16,7 @@ import re
 import sys
 
 EXCLUDED_ROOT_ENTRIES = {".git", ".github"}
+CI_DEFINE_CONSTRAINTS = {"UNITY_INCLUDE_TESTS"}
 MODES = ("editmode", "playmode")
 TEST_ATTRIBUTE_PATTERN = re.compile(r"\[\s*(?:NUnit\.Framework\.)?(?:Test|UnityTest|TestCase|TestCaseSource)\s*[\](,]")
 
@@ -53,6 +56,10 @@ def is_test_assembly(asmdef):
             or "UNITY_INCLUDE_TESTS" in asmdef.get("defineConstraints", []))
 
 
+def runs_in_ci(asmdef):
+    return set(asmdef.get("defineConstraints", [])) <= CI_DEFINE_CONSTRAINTS
+
+
 def test_mode(asmdef):
     return "editmode" if asmdef.get("includePlatforms", []) == ["Editor"] else "playmode"
 
@@ -82,6 +89,11 @@ def main():
     for path in find_asmdefs(root):
         asmdef = read_asmdef(path)
         if not is_test_assembly(asmdef):
+            continue
+
+        if not runs_in_ci(asmdef):
+            unmet = sorted(set(asmdef.get("defineConstraints", [])) - CI_DEFINE_CONSTRAINTS)
+            print(f"{os.path.relpath(path, root)}: not compiled in CI ({', '.join(unmet)}), skipped")
             continue
 
         mode = test_mode(asmdef)

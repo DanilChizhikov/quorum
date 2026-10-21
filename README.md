@@ -16,6 +16,7 @@ dependencies from any DI container - Zenject and VContainer adapters ship with t
     - [UPM Installation](#upm-installation)
 - [Features](#features)
 - [Usage](#usage)
+    - [Considerations](#considerations)
 - [Editor Tools](#editor-tools)
     - [Config editing](#config-editing)
     - [Validator](#validator)
@@ -23,10 +24,14 @@ dependencies from any DI container - Zenject and VContainer adapters ship with t
     - [Hidden types](#hidden-types)
     - [Debugger](#debugger)
     - [Profiler](#profiler)
+    - [Diagnostics cost](#diagnostics-cost)
     - [Brain Map](#brain-map)
     - [Scoring Matrix](#scoring-matrix)
 - [Samples](#samples)
 - [Benchmarks](#benchmarks)
+    - [What the suite covers](#what-the-suite-covers)
+    - [Results](#results)
+    - [Reading the numbers](#reading-the-numbers)
 - [License](#license)
 
 ## Getting Started
@@ -104,6 +109,31 @@ An action shows up in the type picker when it is `public`, marked `[Serializable
 parameterless constructor. Types that are only missing `[Serializable]` are collected in the
 [Hidden types](#hidden-types) window.
 
+### Considerations
+A consideration turns world state into a score. `Evaluate` runs for every action on every
+re-selection, so it is the hottest code in the package: a blackboard lookup by name measured
+**747 ns on Android/IL2CPP**, which is more than the rest of a six-action selection put together.
+
+Resolve everything you can in `Initialize` and keep the reference:
+
+```csharp
+public override void Initialize(IUtilityContext context)
+{
+    context.Blackboard.TryGetVariable(_key, out _variable);
+}
+
+public override float Evaluate(IUtilityContext context) =>
+    _variable != null ? _curve.Evaluate(_variable.Value) : 0f;
+```
+
+The brain calls `Initialize` once per action, on its own cloned consideration tree, so caching
+per-agent data there is safe. `CompositeUtilityConsideration` forwards the call to its children.
+
+One exception: a consideration that lives on a `ScriptableUtilityAction` **asset** is shared by
+every brain that references it, so it must not cache per-agent data. The brain does not call
+`Initialize` on it for that reason - keep such considerations stateless, or move the action into the
+config as a plain `[Serializable]` class.
+
 ### Config and brain
 Create a `BrainConfig` subclass, make an asset of it, then add actions with the `+` button of the
 Actions list and pick the type in the search window. Considerations and the score aggregator are
@@ -120,9 +150,16 @@ public sealed class EnemyBrain : UtilityBrain<EnemyBrainConfig, EnemyContext>
 }
 ```
 
-The brain clones the config in its constructor, injects every action, calls `Initialize` on it and
-destroys the clone on `Dispose`. `Enable` starts the selection, `Disable` exits the current action
-and stops the updates, and `RequestSwitchAction(delay)` asks for a new selection.
+The config asset itself is never copied. In its constructor the brain clones every action with
+`Clone()` - a shallow field copy plus a copy of the consideration tree - then injects the clone and
+calls `Initialize` on it, so two brains built from one config never share mutable state and the asset
+stays untouched. `Enable` starts the selection, `Disable` exits the current action and stops the
+updates, and `RequestSwitchAction(delay)` asks for a new selection.
+
+`Clone()` is `virtual` on `UtilityAction`, `UtilityConsideration` and `UtilityScoreAggregator`, and
+the default covers config data: value fields are duplicated, references to shared assets stay
+shared. Override it only when a reference field holds per-agent state that two brains must not
+share.
 
 ### Dependency injection
 Zenject:
@@ -152,8 +189,8 @@ add `UTILITYAI_ZENJECT_ENABLED` to Scripting Define Symbols manually (same for
 ## Editor Tools
 
 All tooling lives in `com.dtech.utilityai.editor`. The runtime hooks it needs (the live brain registry,
-the switch log and the profiler counters) compile only under `UNITY_EDITOR || DEVELOPMENT_BUILD`, so a
-release build carries none of it.
+the switch log and the profiler counters) compile only under `UNITY_EDITOR || UTILITYAI_DIAGNOSTICS`,
+so a player build carries none of it unless you ask - see [Diagnostics cost](#diagnostics-cost).
 
 ### Config editing
 The Actions list has a context menu on every entry and on its header: Duplicate, Copy, Paste Values,
@@ -191,6 +228,17 @@ on them.
 ### Profiler
 The `Utility AI` profiler module counts active brains and action switches per frame and times action
 selection, which is how a brain that re-selects every frame becomes visible.
+
+### Diagnostics cost
+Everything above - the live brain registry, the switch log and the profiler module - is compiled into
+the **Editor only**. A player build, development or not, carries none of it unless you add
+`UTILITYAI_DIAGNOSTICS` to its Scripting Define Symbols.
+
+That default is deliberate. Measured on Android/IL2CPP, the instrumentation costs more than the work
+it measures: **890 ns on every action selection** (the profiler marker around it), and a brain's
+`Enable`, `Disable` and `Dispose` get 5x to 25x more expensive, because each one registers with or
+scans the brain registry. Turn it on to look at a player build with the debugger or the profiler
+module, and leave it off to profile your game.
 
 ### Brain Map
 `Window/DTech/Utility AI/Brain Map` draws the selected config as a read-only graph: considerations feed
@@ -238,10 +286,95 @@ tick, `Enable`/`Disable`, scoring and switch requests. The assembly is opt-in:
 1. Add `com.unity.test-framework.performance` to your project.
 2. Add `UNITY_INCLUDE_PERFORMANCE_TESTS` to the Scripting Define Symbols.
 
+Brain diagnostics are compiled into the Editor only, so a player run measures the brain without
+them. Add `UTILITYAI_DIAGNOSTICS` to the Scripting Define Symbols of the target platform to measure
+a player build with them instead - see [Diagnostics cost](#diagnostics-cost) for what that costs.
+
 Run it from **Test Runner** and read the numbers in **Window > Analysis > Performance Test Report**.
-The assembly builds for every platform, so the same benchmarks run in a player as well. IL2CPP
-numbers differ from Editor ones, and an Editor or development build additionally pays for the brain
-registry, the switch log and the profiler counters behind `UNITY_EDITOR || DEVELOPMENT_BUILD`.
+The assembly builds for every platform, so the same benchmarks run in a player as well, which is the
+only way to get IL2CPP numbers - Editor numbers come from Mono and from a build that always carries
+the diagnostics.
+
+### What the suite covers
+36 benchmarks in seven fixtures, all over a brain with 6 actions and 3 considerations per action:
+
+- **Scoring** - the aggregator alone, then the full `RequestSwitchAction` path, across four kinds of
+  consideration (none, constant, a composite of constants, a composite of blackboard lookups), both
+  aggregators, and 1000 brains re-scoring in the same frame.
+- **Lifecycle** - creating and disposing brains (inline actions against
+  `ScriptableUtilityActionReference`), `Enable`/`Disable` at one and at a thousand brains.
+- **Tick** - one brain, a thousand brains, and a thousand through the player loop.
+- **Switch requests** - immediate, delayed, and a thousand pending requests in one dispatch.
+- **Allocations** - four budgets asserted at zero bytes per call, so a regression fails the run
+  instead of showing up as a number nobody reads.
+- **Build configuration** - reports whether diagnostics are compiled in, so a result file always
+  says which configuration produced it.
+
+### Results
+One Android device, IL2CPP, development player build, diagnostics off (the default). Median of three
+runs. Per-call values; `GC` is allocations per call.
+
+Scoring one brain, and what each layer adds:
+
+| | time | GC |
+|---|---|---|
+| `Aggregate` over 6 actions, constant considerations | 357 ns | 0 |
+| full selection, no considerations | 361 ns | 0 |
+| full selection, composite of 3 constants per action | 494 ns | 0 |
+| full selection, composite of 3 **cached** blackboard reads | 860 ns | 0 |
+| full selection, composite of 3 blackboard **lookups by name** | 9.62 us | 0 |
+| one `RuntimeBlackboard.TryGetVariable` by name | 414 ns | 0 |
+
+A lookup by name costs more than everything else in a selection put together - 18 of them are 94% of
+that 9.62 us. Resolve the variable in `Initialize` and the same work takes 860 ns. See
+[Considerations](#considerations).
+
+1000 brains re-scoring in one frame: **11.28 ms** with lookups by name, **1.38 ms** with cached
+handles. The second one fits a 60 fps frame with room to spare, which is why the package has no
+scoring budget or time-slicing: it does not need one.
+
+Lifecycle:
+
+| | time | GC |
+|---|---|---|
+| create 200 brains, inline actions | 17.28 ms | 43 / brain |
+| create 200 brains, `ScriptableUtilityActionReference` | 5.38 ms | 13 / brain |
+| dispose 200 brains | 89 us | 0 |
+| `Enable` 1000 brains | 588 us | 0 |
+| `Disable` 1000 brains | 588 us | 0 |
+| `Enable` + `Disable` one brain | 789 ns | 0 |
+| `RequestSwitchAction()` | 371 ns | 0 |
+| `RequestSwitchAction(delay)`, armed and fired | 1.28 us | 0 |
+| action completes and the brain re-selects | 402 ns | 0 |
+
+Creation is the one place that still costs: 86 us and 43 allocations per brain, because every action
+and consideration is cloned for that brain. Actions with no per-brain state belong in a
+`ScriptableUtilityAction` asset referenced through `ScriptableUtilityActionReference` - the asset is
+shared, so the same brain costs 27 us and 13 allocations.
+
+Tick:
+
+| | time | GC |
+|---|---|---|
+| one brain | 14.7 ns | 0 |
+| 1000 brains, called directly | 25.6 us | 0 |
+| 1000 brains, through the player loop | 44.4 us | 0 |
+| dispatch with 1000 pending delayed requests | 79.5 us | 0 |
+
+A brain that is not re-selecting costs ~25 ns per frame and allocates nothing, so the frame cost of
+an idle population is noise. Driving 1000 brains through the package's player-loop hook costs 19 us
+per frame more than calling `Update` yourself - use `BrainUpdateType.Custom` if you already have a
+tick system and want that back.
+
+### Reading the numbers
+These are one device and one configuration. Treat them as the shape of the cost, not as a promise:
+the ratios between rows hold, the absolute values do not travel. The Performance Testing package
+reports the median of each measurement, so a per-call value is that median divided by
+`IterationsPerMeasurement`, while the `Time.GC()` group is already per call.
+
+Measurements under a microsecond are the ones to distrust first. Anything that adds a native call
+per iteration - a profiler marker, `AnimationCurve.Evaluate` - also adds variance to it, so compare
+pairs of benchmarks inside one run rather than medians across runs.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

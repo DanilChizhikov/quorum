@@ -21,6 +21,37 @@ namespace DTech.UtilityAI
 			_considerations = considerations ?? Array.Empty<UtilityConsideration>();
 		}
 		
+		public override void Initialize(IUtilityContext context)
+		{
+			if (_considerations == null)
+			{
+				return;
+			}
+
+			for (int i = 0; i < _considerations.Length; i++)
+			{
+				_considerations[i]?.Initialize(context);
+			}
+		}
+
+		public override UtilityConsideration Clone()
+		{
+			var clone = (CompositeUtilityConsideration)base.Clone();
+			if (_considerations == null)
+			{
+				return clone;
+			}
+
+			var children = new UtilityConsideration[_considerations.Length];
+			for (int i = 0; i < children.Length; i++)
+			{
+				children[i] = _considerations[i]?.Clone();
+			}
+
+			clone._considerations = children;
+			return clone;
+		}
+
 		public override float Evaluate(IUtilityContext context)
 		{
 			if (_considerations == null)

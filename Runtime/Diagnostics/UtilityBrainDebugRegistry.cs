@@ -1,4 +1,4 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
 using System;
 using System.Collections.Generic;
 
@@ -6,37 +6,58 @@ namespace DTech.UtilityAI.Diagnostics
 {
 	internal static class UtilityBrainDebugRegistry
 	{
-		public static event Action Changed;
+		public const int InvalidToken = -1;
 
 		private static readonly List<WeakReference<IUtilityBrainDebugInfo>> _brains = new();
+		private static readonly Stack<int> _freeTokens = new();
 
-		public static void Register(IUtilityBrainDebugInfo brain)
+		public static bool IsObserved => _observerCount > 0;
+
+		private static int _observerCount;
+
+		public static void AddObserver()
 		{
-			if (brain == null)
-			{
-				return;
-			}
-
-			_brains.Add(new WeakReference<IUtilityBrainDebugInfo>(brain));
-			Changed?.Invoke();
+			_observerCount++;
 		}
 
-		public static void Unregister(IUtilityBrainDebugInfo brain)
+		public static void RemoveObserver()
 		{
-			if (brain == null)
+			if (_observerCount <= 0)
 			{
 				return;
 			}
 
-			for (int i = _brains.Count - 1; i >= 0; i--)
+			_observerCount--;
+		}
+
+		public static int Register(IUtilityBrainDebugInfo brain)
+		{
+			if (brain == null)
 			{
-				if (!_brains[i].TryGetTarget(out IUtilityBrainDebugInfo target) || ReferenceEquals(target, brain))
-				{
-					_brains.RemoveAt(i);
-				}
+				return InvalidToken;
 			}
 
-			Changed?.Invoke();
+			var reference = new WeakReference<IUtilityBrainDebugInfo>(brain);
+			if (_freeTokens.Count > 0)
+			{
+				int reusedToken = _freeTokens.Pop();
+				_brains[reusedToken] = reference;
+				return reusedToken;
+			}
+
+			_brains.Add(reference);
+			return _brains.Count - 1;
+		}
+
+		public static void Unregister(int token)
+		{
+			if (token < 0 || token >= _brains.Count || _brains[token] == null)
+			{
+				return;
+			}
+
+			_brains[token] = null;
+			_freeTokens.Push(token);
 		}
 
 		public static int GetBrainsNonAlloc(List<IUtilityBrainDebugInfo> buffer)
@@ -47,30 +68,31 @@ namespace DTech.UtilityAI.Diagnostics
 			}
 
 			buffer.Clear();
-			for (int i = _brains.Count - 1; i >= 0; i--)
+			for (int i = 0; i < _brains.Count; i++)
 			{
-				if (!_brains[i].TryGetTarget(out IUtilityBrainDebugInfo brain))
+				WeakReference<IUtilityBrainDebugInfo> reference = _brains[i];
+				if (reference == null)
 				{
-					_brains.RemoveAt(i);
+					continue;
+				}
+
+				if (!reference.TryGetTarget(out IUtilityBrainDebugInfo brain))
+				{
+					_brains[i] = null;
+					_freeTokens.Push(i);
 					continue;
 				}
 
 				buffer.Add(brain);
 			}
 
-			buffer.Reverse();
 			return buffer.Count;
 		}
 
 		public static void Clear()
 		{
-			if (_brains.Count <= 0)
-			{
-				return;
-			}
-
 			_brains.Clear();
-			Changed?.Invoke();
+			_freeTokens.Clear();
 		}
 
 #if UNITY_EDITOR
