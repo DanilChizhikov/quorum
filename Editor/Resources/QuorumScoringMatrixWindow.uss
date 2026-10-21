@@ -1,0 +1,61 @@
+.uai-root {
+    flex-grow: 1;
+    background-color: var(--unity-colors-window-background);
+}
+
+.uai-matrix__scenario {
+    min-width: 280px;
+}
+
+.uai-matrix__status {
+    padding: 4px 8px;
+    white-space: normal;
+    color: var(--unity-colors-helpbox-text);
+}
+
+.uai-matrix__status--error {
+    color: var(--unity-colors-error-text);
+}
+
+.uai-matrix {
+    flex-grow: 1;
+}
+
+.uai-matrix__row {
+    flex-direction: row;
+    align-items: center;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--unity-colors-inspector_titlebar-border);
+}
+
+.uai-matrix__row--header {
+    -unity-font-style: bold;
+    background-color: var(--unity-colors-toolbar-background);
+}
+
+.uai-matrix__row--mismatch {
+    background-color: var(--unity-colors-helpbox-background);
+}
+
+.uai-matrix__cell {
+    width: 110px;
+    padding: 3px 6px;
+    -unity-text-align: middle-right;
+    overflow: hidden;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-matrix__cell--case {
+    width: 180px;
+    -unity-text-align: middle-left;
+}
+
+.uai-matrix__cell--winner {
+    -unity-font-style: bold;
+    color: var(--unity-colors-highlight-text-inactive);
+    background-color: var(--unity-colors-highlight-background-inactive);
+}
+
+.uai-matrix__cell--error {
+    color: var(--unity-colors-error-text);
+}

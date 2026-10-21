@@ -1,0 +1,335 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fb87cd05366b4148821c7e60844aacc, type: 3}
+  m_Name: VillagerBrainConfig
+  m_EditorClassIdentifier: 
+  _updateType: 0
+  _switchActionType: 0
+  _actionEntries:
+  - rid: 2636270898261786985
+  - rid: 2636270898261786986
+  - rid: 2636270898261786987
+  - rid: 2636270898261786988
+  - rid: 2636270898261786989
+  - rid: 2636270898261786990
+  _consideration:
+    rid: -2
+  _scoreAggregator:
+    rid: 2636270898261786984
+  _actions: []
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 2636270898261786984
+      type: {class: MaxScoreAggregator, ns: DTech.Quorum, asm: com.dtech.quorum}
+      data: 
+    - rid: 2636270898261786985
+      type: {class: FleeAction, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
+      data:
+        _consideration:
+          rid: 2636270898261786991
+        _label: Flee
+        _tint: {r: 0.95, g: 0.2, b: 0.2, a: 1}
+        _commitmentFloor: 0.75
+        _speed: 3.2
+        _safeDistance: 8
+        _stepDistance: 3
+    - rid: 2636270898261786986
+      type: {class: EatAction, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
+      data:
+        _consideration:
+          rid: 2636270898261786992
+        _label: Eat
+        _tint: {r: 0.35, g: 0.85, b: 0.3, a: 1}
+        _commitmentFloor: 0.4
+        _speed: 2
+    - rid: 2636270898261786987
+      type: {class: SleepAction, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
+      data:
+        _consideration:
+          rid: 2636270898261786995
+        _label: Sleep
+        _tint: {r: 0.3, g: 0.45, b: 0.95, a: 1}
+        _commitmentFloor: 0.5
+        _speed: 1.8
+        _restorePerSecond: 0.2
+    - rid: 2636270898261786988
+      type: {class: WorkAction, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
+      data:
+        _consideration:
+          rid: 2636270898261786996
+        _label: Work
+        _tint: {r: 0.75, g: 0.5, b: 0.25, a: 1}
+        _commitmentFloor: 0.3
+        _speed: 1.6
+        _chopDuration: 2.5
+        _energyCostPerSecond: 0.05
+    - rid: 2636270898261786989
+      type: {class: WanderAction, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
+      data:
+        _consideration:
+          rid: 2636270898261787000
+        _label: Wander
+        _tint: {r: 0.85, g: 0.85, b: 0.85, a: 1}
+        _commitmentFloor: 0
+        _speed: 1.4
+        _radius: 4
+    - rid: 2636270898261786990
+      type: {class: ScriptableQuorumActionReference, ns: DTech.Quorum, asm: com.dtech.quorum}
+      data:
+        _consideration:
+          rid: -2
+        _action: {fileID: 11400000, guid: 62d9fd64a90c0437ca28102952a212a4, type: 2}
+    - rid: 2636270898261786991
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
+      data:
+        _key: ThreatDistance
+        _min: 0
+        _max: 8
+        _curve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 1
+            inSlope: -0.15999997
+            outSlope: -0.15999997
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0.33333334
+          - serializedVersion: 3
+            time: 0.5
+            value: 0.92
+            inSlope: -1
+            outSlope: -1
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0.33333334
+            outWeight: 0.33333334
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: -1.84
+            outSlope: -1.84
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0.33333334
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+    - rid: 2636270898261786992
+      type: {class: CompositeConsideration, ns: DTech.Quorum, asm: com.dtech.quorum}
+      data:
+        _combineMode: 0
+        _considerations:
+        - rid: 2636270898261786993
+        - rid: 2636270898261786994
+    - rid: 2636270898261786993
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
+      data:
+        _key: Hunger
+        _min: 0
+        _max: 1
+        _curve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0.2857143
+            outSlope: 0.2857143
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0.33333334
+          - serializedVersion: 3
+            time: 0.35
+            value: 0.1
+            inSlope: 0.7857143
+            outSlope: 0.7857143
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0.33333334
+            outWeight: 0.33333334
+          - serializedVersion: 3
+            time: 0.7
+            value: 0.55
+            inSlope: 1.2261904
+            outSlope: 1.2261904
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0.33333334
+            outWeight: 0.33333334
+          - serializedVersion: 3
+            time: 1
+            value: 0.9
+            inSlope: 1.1666665
+            outSlope: 1.1666665
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0.33333334
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+    - rid: 2636270898261786994
+      type: {class: BlackboardBoolConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
+      data:
+        _key: FoodAvailable
+        _whenTrue: 1
+        _whenFalse: 0
+    - rid: 2636270898261786995
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
+      data:
+        _key: Energy
+        _min: 0
+        _max: 1
+        _curve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0.9
+            inSlope: -0.6666666
+            outSlope: -0.6666666
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0.33333334
+          - serializedVersion: 3
+            time: 0.3
+            value: 0.7
+            inSlope: -1.2499999
+            outSlope: -1.2499999
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0.33333334
+            outWeight: 0.33333334
+          - serializedVersion: 3
+            time: 0.6
+            value: 0.15
+            inSlope: -1.1041666
+            outSlope: -1.1041666
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0.33333334
+            outWeight: 0.33333334
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: -0.37500003
+            outSlope: -0.37500003
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0.33333334
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+    - rid: 2636270898261786996
+      type: {class: CompositeConsideration, ns: DTech.Quorum, asm: com.dtech.quorum}
+      data:
+        _combineMode: 0
+        _considerations:
+        - rid: 2636270898261786997
+        - rid: 2636270898261786998
+        - rid: 2636270898261786999
+    - rid: 2636270898261786997
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
+      data:
+        _key: Energy
+        _min: 0
+        _max: 1
+        _curve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 1
+            outSlope: 1
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0.33333334
+          - serializedVersion: 3
+            time: 0.3
+            value: 0.3
+            inSlope: 1
+            outSlope: 1
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0.33333334
+            outWeight: 0.33333334
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 1
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0.33333334
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+    - rid: 2636270898261786998
+      type: {class: BlackboardCurveConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
+      data:
+        _key: Hunger
+        _min: 0
+        _max: 1
+        _curve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 1
+            inSlope: -0.5
+            outSlope: -0.5
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0.33333334
+          - serializedVersion: 3
+            time: 0.6
+            value: 0.7
+            inSlope: -1.125
+            outSlope: -1.125
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0.33333334
+            outWeight: 0.33333334
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: -1.7500001
+            outSlope: -1.7500001
+            tangentMode: 35
+            weightedMode: 0
+            inWeight: 0.33333334
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+    - rid: 2636270898261786999
+      type: {class: ConstantConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
+      data:
+        _value: 0.6
+    - rid: 2636270898261787000
+      type: {class: ConstantConsideration, ns: DTech.Quorum.Samples.Village, asm: DTech.Quorum.Samples.Village}
+      data:
+        _value: 0.15

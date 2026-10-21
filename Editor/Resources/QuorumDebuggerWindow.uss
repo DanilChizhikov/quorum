@@ -1,0 +1,156 @@
+.uai-root {
+    flex-grow: 1;
+    background-color: var(--unity-colors-window-background);
+}
+
+.uai-brains {
+    flex-grow: 1;
+    min-width: 160px;
+    border-right-width: 1px;
+    border-right-color: var(--unity-colors-inspector_titlebar-border);
+}
+
+.uai-brains__scroll {
+    flex-grow: 1;
+}
+
+.uai-brains__row {
+    margin: 0;
+    padding: 4px 8px;
+    border-width: 0;
+    border-radius: 0;
+    -unity-text-align: middle-left;
+    background-color: var(--unity-colors-window-background);
+    color: var(--unity-colors-label-text);
+}
+
+.uai-brains__row:hover {
+    background-color: var(--unity-colors-highlight-background-hover);
+}
+
+.uai-brains__row--selected {
+    background-color: var(--unity-colors-highlight-background);
+    color: var(--unity-colors-highlight-text);
+}
+
+.uai-brains__row--disabled {
+    opacity: 0.6;
+}
+
+.uai-details {
+    flex-grow: 1;
+}
+
+.uai-header {
+    padding: 6px 8px;
+    -unity-font-style: bold;
+    white-space: normal;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-sections {
+    flex-direction: column;
+}
+
+.uai-section {
+    padding: 8px 8px 2px 8px;
+    -unity-font-style: bold;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-actions__row {
+    flex-direction: row;
+    align-items: center;
+    padding: 2px 8px;
+}
+
+.uai-actions__row--current {
+    background-color: var(--unity-colors-highlight-background-inactive);
+}
+
+.uai-actions__name {
+    width: 180px;
+    overflow: hidden;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-actions__bar {
+    flex-grow: 1;
+    height: 10px;
+    background-color: var(--unity-colors-input_field-background);
+    border-width: 1px;
+    border-color: var(--unity-colors-input_field-border);
+}
+
+.uai-actions__bar-fill {
+    height: 100%;
+    width: 0;
+    background-color: var(--unity-colors-progress-background);
+}
+
+.uai-actions__score {
+    width: 70px;
+    -unity-text-align: middle-right;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-actions__score--error {
+    color: var(--unity-colors-error-text);
+}
+
+.uai-actions__state {
+    width: 80px;
+    -unity-text-align: middle-right;
+    font-size: 10px;
+    color: var(--unity-colors-helpbox-text);
+}
+
+.uai-tree__row {
+    flex-direction: row;
+    align-items: center;
+    padding: 1px 8px;
+}
+
+.uai-tree__name {
+    flex-grow: 1;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-tree__score {
+    width: 70px;
+    -unity-text-align: middle-right;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-tree__score--error {
+    color: var(--unity-colors-error-text);
+}
+
+.uai-log__row {
+    flex-direction: row;
+    align-items: center;
+    padding: 1px 8px;
+}
+
+.uai-log__time {
+    width: 70px;
+    font-size: 10px;
+    color: var(--unity-colors-helpbox-text);
+}
+
+.uai-log__message {
+    flex-grow: 1;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-log__score {
+    width: 70px;
+    -unity-text-align: middle-right;
+    color: var(--unity-colors-label-text);
+}
+
+.uai-empty {
+    padding: 12px 8px;
+    white-space: normal;
+    color: var(--unity-colors-helpbox-text);
+}
