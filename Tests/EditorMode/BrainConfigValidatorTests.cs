@@ -11,6 +11,7 @@ namespace DTech.UtilityAI.Tests.EditorMode
 	{
 		private readonly List<BrainConfig> _configs = new();
 		private readonly List<BlackboardAsset> _blackboards = new();
+		private readonly List<ScriptableUtilityAction> _actionAssets = new();
 
 		[TearDown]
 		public void TearDown()
@@ -27,6 +28,12 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			}
 
 			_blackboards.Clear();
+			for (int i = 0; i < _actionAssets.Count; i++)
+			{
+				Object.DestroyImmediate(_actionAssets[i]);
+			}
+
+			_actionAssets.Clear();
 		}
 
 		[Test]
@@ -88,6 +95,65 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
 
 			AssertHasIssue(issues, BrainConfigIssueCode.EmptyScriptableActionReference, BrainConfigIssueSeverity.Error);
+		}
+
+		[Test]
+		public void Validate_ReferenceToScorelessScriptableAction_ReportsWarning()
+		{
+			TestScorelessScriptableAction asset = CreateActionAsset<TestScorelessScriptableAction>();
+			BrainConfig config = CreateConfig(new ScriptableUtilityActionReference(asset));
+
+			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
+
+			AssertHasIssue(issues, BrainConfigIssueCode.ActionWithoutScoreSource, BrainConfigIssueSeverity.Warning);
+		}
+
+		[Test]
+		public void Validate_ReferenceToScoredScriptableAction_ReportsNoWarning()
+		{
+			TestScriptableAction asset = CreateActionAsset<TestScriptableAction>();
+			asset.SetUtility(0.5f);
+			BrainConfig config = CreateConfig(new ScriptableUtilityActionReference(asset));
+
+			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
+
+			AssertHasNoIssue(issues, BrainConfigIssueCode.ActionWithoutScoreSource);
+		}
+
+		[Test]
+		public void Validate_BaseAndDerivedContextActions_ReportsNoMismatch()
+		{
+			BrainConfig config = CreateConfig(
+				new TestBaseContextUtilityAction(),
+				new TestDerivedContextUtilityAction());
+
+			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
+
+			AssertHasNoIssue(issues, BrainConfigIssueCode.ContextTypeMismatch);
+		}
+
+		[Test]
+		public void Validate_UnrelatedContextActions_ReportsError()
+		{
+			BrainConfig config = CreateConfig(
+				new TestBaseContextUtilityAction(),
+				new TestOtherContextUtilityAction());
+
+			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
+
+			AssertHasIssue(issues, BrainConfigIssueCode.ContextTypeMismatch, BrainConfigIssueSeverity.Error);
+		}
+
+		[Test]
+		public void Validate_FormulaOutsideConsiderationOfSharedAsset_ReportsError()
+		{
+			TestSharedFormulaScriptableAction asset = CreateActionAsset<TestSharedFormulaScriptableAction>();
+			asset.SetFallbackConsideration(new FormulaUtilityConsideration("clamp01(Hunger / 100)"));
+			BrainConfig config = CreateConfig(new ScriptableUtilityActionReference(asset));
+
+			List<BrainConfigIssue> issues = BrainConfigValidationScanner.Scan(config);
+
+			AssertHasIssue(issues, BrainConfigIssueCode.FormulaOnSharedAsset, BrainConfigIssueSeverity.Error);
 		}
 
 		[Test]
@@ -304,6 +370,14 @@ namespace DTech.UtilityAI.Tests.EditorMode
 
 			_blackboards.Add(schema);
 			return schema;
+		}
+
+		private T CreateActionAsset<T>()
+			where T : ScriptableUtilityAction
+		{
+			var asset = ScriptableObject.CreateInstance<T>();
+			_actionAssets.Add(asset);
+			return asset;
 		}
 
 		private BrainConfig CreateConfig(params UtilityAction[] actions)

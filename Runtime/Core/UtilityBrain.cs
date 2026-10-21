@@ -36,6 +36,7 @@ namespace DTech.UtilityAI
 		protected TConfig Config { get; }
 		protected TContext Context => _context;
 #if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
+		int IUtilityBrainDebugInfo.DebugToken => _debugToken;
 		BrainConfig IUtilityBrainDebugInfo.SourceConfig => Config;
 		string IUtilityBrainDebugInfo.ConfigName => Config != null ? Config.name : string.Empty;
 		BrainUpdateType IUtilityBrainDebugInfo.UpdateType => UpdateType;
@@ -93,7 +94,7 @@ namespace DTech.UtilityAI
 			_updateProvider.AddUpdate(_cachedUpdate);
 			IsEnabled = true;
 #if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
-			UtilityProfilerCounters.SyncActiveBrains();
+			UtilityProfilerCounters.BrainEnabled();
 #endif
 			RequestSwitchAction();
 		}
@@ -117,9 +118,7 @@ namespace DTech.UtilityAI
 				_request.Arm(delay, token);
 				return;
 			}
-
-			// An immediate request supersedes a pending delayed one, otherwise a brain that finished
-			// its action while a delay was armed would stay in that final state until the delay ran out.
+			
 			_request?.Cancel();
 			_isRequestingSwitchAction = true;
 			OnRequestSwitchActionCompleted();
@@ -202,7 +201,7 @@ namespace DTech.UtilityAI
 			SetCurrentAction(null);
 			IsEnabled = false;
 #if UNITY_EDITOR || UTILITYAI_DIAGNOSTICS
-			UtilityProfilerCounters.SyncActiveBrains();
+			UtilityProfilerCounters.BrainDisabled();
 #endif
 		}
 		
@@ -314,7 +313,6 @@ namespace DTech.UtilityAI
 			int actionIndex = scoreAggregator.Aggregate(_actions, _context);
 #endif
 			IUtilityAction action = actionIndex >= 0 && actionIndex < _actions.Length ? _actions[actionIndex] : null;
-			// A finished action that wins again must start over, otherwise it keeps returning its final state.
 			bool restart = action != null && action == _currentAction && _lastActionState != UtilityActionState.Running;
 			SetCurrentAction(action, restart);
 		}

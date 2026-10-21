@@ -2,7 +2,7 @@ using DTech.Blackboard;
 
 namespace DTech.UtilityAI.Tests.EditorMode
 {
-	internal sealed class TestUtilityContext : UtilityContext<TestUtilityAgent>
+	internal class TestUtilityContext : UtilityContext<TestUtilityAgent>
 	{
 		public TestUtilityContext(TestUtilityAgent agent, RuntimeBlackboard blackboard) : base(agent, blackboard) { }
 	}

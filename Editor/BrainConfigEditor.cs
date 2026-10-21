@@ -23,7 +23,7 @@ namespace DTech.UtilityAI.Editor
 
 		private readonly List<BrainConfigIssue> _issues = new();
 		private readonly List<IUtilityBrainDebugInfo> _brains = new();
-		private readonly List<UtilityScoreSampler> _samplers = new();
+		private readonly Dictionary<int, UtilityScoreSampler> _samplers = new();
 
 		private UtilityActionListDrawProvider _actionsDrawProvider;
 		private SerializedProperty _updateTypeProperty;
@@ -65,11 +65,6 @@ namespace DTech.UtilityAI.Editor
 				_ => MessageType.Info,
 			};
 
-		/// <summary>
-		/// Scores come from a throttled sampler instead of a fresh evaluation per repaint: the inspector
-		/// repaints constantly in play mode, and scoring every action of every live brain each time is
-		/// what makes the editor crawl with a hundred agents.
-		/// </summary>
 		private void DrawLiveBrain(IUtilityBrainDebugInfo brain, int index)
 		{
 			string state = brain.IsEnabled ? "Enabled" : "Disabled";
@@ -77,7 +72,7 @@ namespace DTech.UtilityAI.Editor
 				$"#{index}",
 				$"{state}    current: {UtilityActionLabel.Get(brain.CurrentAction)} ({brain.CurrentState})");
 
-			UtilityScoreSampler sampler = GetSampler(index - 1);
+			UtilityScoreSampler sampler = GetSampler(brain.DebugToken);
 			sampler.Sample(brain, false);
 			IReadOnlyList<IUtilityAction> actions = brain.Actions;
 			using (new EditorGUI.IndentLevelScope())
@@ -91,14 +86,16 @@ namespace DTech.UtilityAI.Editor
 			}
 		}
 
-		private UtilityScoreSampler GetSampler(int index)
+		private UtilityScoreSampler GetSampler(int token)
 		{
-			while (_samplers.Count <= index)
+			if (_samplers.TryGetValue(token, out UtilityScoreSampler sampler))
 			{
-				_samplers.Add(new UtilityScoreSampler());
+				return sampler;
 			}
 
-			return _samplers[index];
+			sampler = new UtilityScoreSampler();
+			_samplers.Add(token, sampler);
+			return sampler;
 		}
 
 		private void OnEnable()
@@ -119,6 +116,7 @@ namespace DTech.UtilityAI.Editor
 			UtilityBrainDebugRegistry.RemoveObserver();
 			Undo.undoRedoPerformed -= OnUndoRedoPerformed;
 			_samplers.Clear();
+			_brains.Clear();
 			_actionsDrawProvider?.Dispose();
 			_actionsDrawProvider = null;
 		}

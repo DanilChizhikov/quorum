@@ -5,6 +5,7 @@ namespace DTech.UtilityAI.Diagnostics
 {
 	internal interface IUtilityBrainDebugInfo
 	{
+		int DebugToken { get; }
 		BrainConfig SourceConfig { get; }
 		string ConfigName { get; }
 		BrainUpdateType UpdateType { get; }

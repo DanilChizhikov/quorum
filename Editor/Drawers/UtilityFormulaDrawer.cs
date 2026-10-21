@@ -120,8 +120,6 @@ namespace DTech.UtilityAI.Editor
 
 		private static void OpenNamePicker(Rect buttonRect, SerializedProperty property, BlackboardAsset schema)
 		{
-			// The callback runs in a later frame: keep the target object and the path, not a live
-			// SerializedObject that may belong to a destroyed target by then.
 			Object targetObject = property.serializedObject.targetObject;
 			string propertyPath = property.propertyPath;
 			UtilityFormulaNameSearchProvider provider = UtilityFormulaNameSearchProvider.Create(
@@ -141,7 +139,7 @@ namespace DTech.UtilityAI.Editor
 				return;
 			}
 
-			var serializedObject = new SerializedObject(targetObject);
+			using var serializedObject = new SerializedObject(targetObject);
 			SerializedProperty property = serializedObject.FindProperty(propertyPath);
 			if (property == null)
 			{

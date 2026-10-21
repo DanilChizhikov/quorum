@@ -1,8 +1,10 @@
 using System;
+using UnityEngine.Scripting;
 
 namespace DTech.UtilityAI
 {
 	[Serializable]
+	[Preserve]
 	public abstract class UtilityConsideration
 	{
 		/// <summary>
@@ -11,7 +13,6 @@ namespace DTech.UtilityAI
 		/// Not called for a consideration that lives on a ScriptableUtilityAction asset: that asset is
 		/// shared by every brain, so per-agent data cached in it would leak between agents.
 		/// </summary>
-		/// <param name="context">Context the owning brain was built with.</param>
 		public virtual void Initialize(IUtilityContext context) { }
 
 		/// <summary>
@@ -20,7 +21,6 @@ namespace DTech.UtilityAI
 		/// assets stay shared. Override it when a reference field holds per-agent state that two
 		/// brains must not share.
 		/// </summary>
-		/// <returns>Copy of this consideration for one brain.</returns>
 		public virtual UtilityConsideration Clone() => (UtilityConsideration)MemberwiseClone();
 
 		public abstract float Evaluate(IUtilityContext context);

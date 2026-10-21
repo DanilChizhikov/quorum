@@ -141,12 +141,12 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		}
 
 		[Test]
-		public void Evaluate_WithoutInitialize_BindsOnFirstCall()
+		public void Evaluate_WithoutInitialize_ReturnsZero()
 		{
 			AddFloat("Hunger", 25f);
 			var consideration = new FormulaUtilityConsideration("Hunger / 100");
 
-			Assert.AreEqual(0.25f, consideration.Evaluate(_context), Tolerance);
+			Assert.AreEqual(0f, consideration.Evaluate(_context), Tolerance);
 		}
 
 		[Test]
@@ -154,12 +154,13 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		{
 			var context = new TestUtilityContext(new TestUtilityAgent(), null);
 			var consideration = new FormulaUtilityConsideration("Hunger");
+			consideration.Initialize(context);
 
 			Assert.AreEqual(0f, consideration.Evaluate(context), Tolerance);
 		}
 
 		[Test]
-		public void Evaluate_AnotherBlackboard_RebindsToIt()
+		public void Initialize_AnotherBlackboard_RebindsToIt()
 		{
 			AddFloat("Hunger", 1f);
 			var consideration = new FormulaUtilityConsideration("Hunger");
@@ -170,9 +171,9 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			using var other = new RuntimeBlackboard();
 			other.Add(new BlackboardVariable<float> { Name = "Hunger", Value = 2f });
 			var otherContext = new TestUtilityContext(new TestUtilityAgent(), other);
+			consideration.Initialize(otherContext);
 
 			Assert.AreEqual(2f, consideration.Evaluate(otherContext), Tolerance);
-			Assert.AreEqual(1f, consideration.Evaluate(_context), Tolerance);
 		}
 
 		[Test]
@@ -221,7 +222,7 @@ namespace DTech.UtilityAI.Tests.EditorMode
 		}
 
 		[Test]
-		public void Clone_ReturnsInstanceThatBindsItself()
+		public void Clone_ScoresOnlyAfterItsOwnInitialize()
 		{
 			AddFloat("Hunger", 4f);
 			var original = new FormulaUtilityConsideration("Hunger * 2");
@@ -230,6 +231,10 @@ namespace DTech.UtilityAI.Tests.EditorMode
 			var clone = (FormulaUtilityConsideration)original.Clone();
 
 			Assert.AreNotSame(original, clone);
+			Assert.AreEqual(0f, clone.Evaluate(_context), Tolerance);
+
+			clone.Initialize(_context);
+
 			Assert.AreEqual(8f, clone.Evaluate(_context), Tolerance);
 		}
 

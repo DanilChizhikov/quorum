@@ -185,11 +185,14 @@ identifier, wrap it in braces: `{Max Hunger}`.
 
 The formula is compiled once and every variable is resolved to its `BlackboardVariable<T>` once, in
 `Initialize`, exactly as [Considerations](#considerations) asks. `Evaluate` then only reads the cached
-handles and walks the compiled program, so it allocates nothing. A consideration that never got
-`Initialize` - one on a `ScriptableUtilityAction` asset, or one the editor tools score off-tick -
-compiles and resolves on its first `Evaluate` instead. Either way it recompiles and re-resolves
-whenever the expression or the `RuntimeBlackboard` it was given changes, so tuning a formula in the
-inspector takes effect while the game is running.
+handles and walks the compiled program, so it allocates nothing and never re-resolves. `Initialize`
+recompiles and rebinds whenever the expression or the `RuntimeBlackboard` changed, so tuning a formula
+in the inspector takes effect while the game is running.
+
+A formula that never got `Initialize` scores `0`: binding on the fly would cost a lookup per name per
+evaluation, and on a shared asset it would bind to whichever agent evaluated last. A formula therefore
+belongs on a per-brain action, never on a `ScriptableUtilityAction` asset - the validator reports that
+one as an error.
 
 A name the blackboard has no variable for makes the whole formula score 0 rather than quietly reading
 as zero, because a typo that produces a plausible number is worse than one that produces none. At
@@ -345,10 +348,17 @@ add `UTILITYAI_ZENJECT_ENABLED` to Scripting Define Symbols manually (same for
 
 ## Managed stripping
 Actions, considerations and aggregators are created from `[SerializeReference]` data and get their
-dependencies through reflection, so nothing in compiled code references your own types. On
-`Managed Stripping Level = High` that makes them candidates for removal: mark them with
-`[UnityEngine.Scripting.Preserve]`, or keep their assembly in a `link.xml`, and verify with an
-IL2CPP build before shipping.
+dependencies through reflection, so nothing in compiled code references those types. On
+`Managed Stripping Level = High` that makes them candidates for removal.
+
+The package covers its own: `Runtime/link.xml` keeps `com.dtech.utilityai` whole, and the base types
+(`UtilityAction`, `ScriptableUtilityAction`, `UtilityConsideration`, `UtilityScoreAggregator` and the
+built-in implementations) also carry `[Preserve]`, which is what a build that compiles the package
+from sources goes by.
+
+**Your own** actions, considerations and aggregators are not covered: mark them with
+`[UnityEngine.Scripting.Preserve]`, or keep their assembly in a `link.xml` of your own, and verify
+with an IL2CPP build at `High` before shipping.
 
 ## Editor Tools
 

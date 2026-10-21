@@ -114,7 +114,8 @@ namespace DTech.UtilityAI.Editor
 
 		private static void ValidateScoreSource(BrainConfig config, List<BrainConfigIssue> issues, UtilityAction action, int index)
 		{
-			if (GetConsideration(action) != null || HasCustomUtility(action.GetType()))
+			object scoreSource = action is ScriptableUtilityActionReference reference ? reference.Action : action;
+			if (scoreSource == null || GetConsideration(scoreSource) != null || HasCustomUtility(scoreSource.GetType()))
 			{
 				return;
 			}
@@ -123,7 +124,7 @@ namespace DTech.UtilityAI.Editor
 				config,
 				BrainConfigIssueSeverity.Warning,
 				BrainConfigIssueCode.ActionWithoutScoreSource,
-				$"Action {index} ({GetActionName(action)}) has no consideration and no own CalculateUtility: its score is always 0.",
+				$"Action {index} ({GetScoreSourceName(scoreSource)}) has no consideration and no own CalculateUtility: its score is always 0.",
 				ActionsPropertyPath));
 		}
 
@@ -293,10 +294,6 @@ namespace DTech.UtilityAI.Editor
 				ConsiderationPropertyPath));
 		}
 
-		/// <summary>
-		/// A consideration on a ScriptableUtilityAction asset never gets Initialize: the asset is shared
-		/// by every brain, so a formula there re-resolves its variables on every evaluation of every agent.
-		/// </summary>
 		private static void ValidateSharedAssetFormulas(BrainConfig config, List<BrainConfigIssue> issues)
 		{
 			IReadOnlyList<UtilityAction> actions = config.Actions;
@@ -312,23 +309,18 @@ namespace DTech.UtilityAI.Editor
 					continue;
 				}
 
-				FieldInfo field = UtilitySerializableFieldCache.GetField(reference.Action.GetType(), ConsiderationFieldName);
-				if (field?.GetValue(reference.Action) is not UtilityConsideration consideration)
-				{
-					continue;
-				}
-
-				if (!ContainsFormula(consideration, new HashSet<object>()))
+				if (!ContainsFormula(reference.Action, new HashSet<object>()))
 				{
 					continue;
 				}
 
 				issues.Add(new BrainConfigIssue(
 					config,
-					BrainConfigIssueSeverity.Warning,
+					BrainConfigIssueSeverity.Error,
 					BrainConfigIssueCode.FormulaOnSharedAsset,
-					$"Action {i} ({reference.Action.name}) keeps a formula consideration on a shared asset: " +
-					"it rebinds on every evaluation of every brain. Move the formula to a per-brain action.",
+					$"Action {i} ({reference.Action.name}) keeps a formula on a shared asset: " +
+					"nothing on the asset gets Initialize, so the formula never binds and always scores 0. " +
+					"Move the formula to a per-brain action.",
 					ActionsPropertyPath));
 			}
 		}
@@ -387,10 +379,6 @@ namespace DTech.UtilityAI.Editor
 			return false;
 		}
 
-		/// <summary>
-		/// Every action of one brain gets the same context instance, so two actions written for two
-		/// different contexts cannot both run: the mismatched one silently fails and scores 0.
-		/// </summary>
 		private static void ValidateContextTypes(BrainConfig config, List<BrainConfigIssue> issues)
 		{
 			IReadOnlyList<UtilityAction> actions = config.Actions;
@@ -412,7 +400,7 @@ namespace DTech.UtilityAI.Editor
 				contextTypes.Add(contextType, i);
 			}
 
-			if (contextTypes.Count <= 1)
+			if (contextTypes.Count <= 1 || HasCommonContext(contextTypes.Keys))
 			{
 				return;
 			}
@@ -430,6 +418,31 @@ namespace DTech.UtilityAI.Editor
 				$"Actions expect different contexts: {string.Join(", ", names)}. " +
 				"Only the actions matching the brain context run; the rest fail and score 0.",
 				ActionsPropertyPath));
+		}
+
+		private static bool HasCommonContext(Dictionary<Type, int>.KeyCollection contextTypes)
+		{
+			foreach (Type candidate in contextTypes)
+			{
+				bool isCommon = true;
+				foreach (Type contextType in contextTypes)
+				{
+					if (contextType.IsAssignableFrom(candidate))
+					{
+						continue;
+					}
+
+					isCommon = false;
+					break;
+				}
+
+				if (isCommon)
+				{
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		private static Type GetContextType(UtilityAction action)
@@ -457,10 +470,10 @@ namespace DTech.UtilityAI.Editor
 			return null;
 		}
 
-		private static UtilityConsideration GetConsideration(UtilityAction action)
+		private static UtilityConsideration GetConsideration(object scoreSource)
 		{
-			FieldInfo field = UtilitySerializableFieldCache.GetField(action.GetType(), ConsiderationFieldName);
-			return field?.GetValue(action) as UtilityConsideration;
+			FieldInfo field = UtilitySerializableFieldCache.GetField(scoreSource.GetType(), ConsiderationFieldName);
+			return field?.GetValue(scoreSource) as UtilityConsideration;
 		}
 
 		private static bool HasCustomUtility(Type type)
@@ -489,15 +502,26 @@ namespace DTech.UtilityAI.Editor
 
 		private static bool IsFrameworkActionType(Type type)
 		{
-			if (type == typeof(UtilityAction))
+			if (type == typeof(UtilityAction) || type == typeof(ScriptableUtilityAction))
 			{
 				return true;
 			}
 
-			return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(UtilityAction<,>);
+			if (!type.IsGenericType)
+			{
+				return false;
+			}
+
+			Type definition = type.GetGenericTypeDefinition();
+			return definition == typeof(UtilityAction<,>) || definition == typeof(ScriptableUtilityAction<,>);
 		}
 
 		private static string GetActionName(UtilityAction action) =>
 			UtilityTypeRegistry.GetDisplayName(action.GetType());
+
+		private static string GetScoreSourceName(object scoreSource) =>
+			scoreSource is ScriptableUtilityAction asset
+				? asset.name
+				: UtilityTypeRegistry.GetDisplayName(scoreSource.GetType());
 	}
 }

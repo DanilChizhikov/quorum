@@ -1,10 +1,12 @@
 using System;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace DTech.UtilityAI
 {
 	[Serializable]
 	[UtilityMenu("Composite")]
+	[Preserve]
 	public sealed class CompositeUtilityConsideration : UtilityConsideration
 	{
 		[SerializeField]

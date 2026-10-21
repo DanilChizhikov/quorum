@@ -60,13 +60,15 @@ namespace DTech.UtilityAI.Diagnostics
 			_freeTokens.Push(token);
 		}
 
-		/// <summary>
-		/// Counts the brains that are enabled right now and drops the entries of collected ones, so a
-		/// brain that was garbage collected without Disable or Dispose stops counting.
-		/// </summary>
-		public static int GetEnabledCount()
+		public static int GetBrainsNonAlloc(List<IUtilityBrainDebugInfo> buffer)
 		{
-			int count = 0;
+			if (buffer == null)
+			{
+				return 0;
+			}
+
+			buffer.Clear();
+			int enabledCount = 0;
 			for (int i = 0; i < _brains.Count; i++)
 			{
 				WeakReference<IUtilityBrainDebugInfo> reference = _brains[i];
@@ -84,39 +86,13 @@ namespace DTech.UtilityAI.Diagnostics
 
 				if (brain.IsEnabled)
 				{
-					count++;
-				}
-			}
-
-			return count;
-		}
-
-		public static int GetBrainsNonAlloc(List<IUtilityBrainDebugInfo> buffer)
-		{
-			if (buffer == null)
-			{
-				return 0;
-			}
-
-			buffer.Clear();
-			for (int i = 0; i < _brains.Count; i++)
-			{
-				WeakReference<IUtilityBrainDebugInfo> reference = _brains[i];
-				if (reference == null)
-				{
-					continue;
-				}
-
-				if (!reference.TryGetTarget(out IUtilityBrainDebugInfo brain))
-				{
-					_brains[i] = null;
-					_freeTokens.Push(i);
-					continue;
+					enabledCount++;
 				}
 
 				buffer.Add(brain);
 			}
 
+			UtilityProfilerCounters.SetActiveBrains(enabledCount);
 			return buffer.Count;
 		}
 
@@ -124,6 +100,7 @@ namespace DTech.UtilityAI.Diagnostics
 		{
 			_brains.Clear();
 			_freeTokens.Clear();
+			UtilityProfilerCounters.SetActiveBrains(0);
 		}
 
 #if UNITY_EDITOR

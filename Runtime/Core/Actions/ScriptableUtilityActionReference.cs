@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace DTech.UtilityAI
 {
@@ -10,6 +11,7 @@ namespace DTech.UtilityAI
 	/// </summary>
 	[Serializable]
 	[UtilityMenu("Scriptable Action Reference", "ScriptableObject Icon")]
+	[Preserve]
 	public sealed class ScriptableUtilityActionReference : UtilityAction
 	{
 		[SerializeField]

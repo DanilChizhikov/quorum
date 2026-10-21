@@ -14,11 +14,8 @@ namespace DTech.UtilityAI.Editor
 
 		private BlackboardAsset _schema;
 		private Action<string> _onNameSelected;
+		private int _generation;
 
-		/// <summary>
-		/// Reuses one instance: a provider created per picker leaks a ScriptableObject every time the
-		/// window closes without a selection, and only one picker is open at a time.
-		/// </summary>
 		public static UtilityFormulaNameSearchProvider Create(BlackboardAsset schema, Action<string> onNameSelected)
 		{
 			if (_provider == null)
@@ -29,6 +26,7 @@ namespace DTech.UtilityAI.Editor
 
 			_provider._schema = schema;
 			_provider._onNameSelected = onNameSelected;
+			_provider._generation++;
 			return _provider;
 		}
 
@@ -40,6 +38,7 @@ namespace DTech.UtilityAI.Editor
 				return tree;
 			}
 
+			int generation = _generation;
 			IReadOnlyList<BlackboardVariable> variables = _schema.Variables;
 			for (int i = 0; i < variables.Count; i++)
 			{
@@ -52,7 +51,7 @@ namespace DTech.UtilityAI.Editor
 				tree.Add(new SearchTreeEntry(new GUIContent(variable.Name))
 				{
 					level = 1,
-					userData = variable.Name,
+					userData = new Entry(generation, variable.Name),
 				});
 			}
 
@@ -61,11 +60,34 @@ namespace DTech.UtilityAI.Editor
 
 		bool ISearchWindowProvider.OnSelectEntry(SearchTreeEntry searchTreeEntry, SearchWindowContext context)
 		{
+			if (searchTreeEntry.userData is not Entry entry || entry.Generation != _generation)
+			{
+				return true;
+			}
+
 			Action<string> onNameSelected = _onNameSelected;
 			_schema = null;
 			_onNameSelected = null;
-			onNameSelected?.Invoke(searchTreeEntry.userData as string);
+			onNameSelected?.Invoke(entry.Name);
 			return true;
+		}
+
+		private void OnDisable()
+		{
+			_schema = null;
+			_onNameSelected = null;
+		}
+
+		private readonly struct Entry
+		{
+			public int Generation { get; }
+			public string Name { get; }
+
+			public Entry(int generation, string name)
+			{
+				Generation = generation;
+				Name = name;
+			}
 		}
 	}
 }

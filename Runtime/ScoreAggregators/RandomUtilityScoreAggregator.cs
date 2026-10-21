@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Scripting;
 using UnityEngine.Pool;
 using Random = UnityEngine.Random;
 
@@ -8,6 +9,7 @@ namespace DTech.UtilityAI
 {
 	[Serializable]
 	[UtilityMenu("Random Weighted Utility")]
+	[Preserve]
 	public sealed class RandomUtilityScoreAggregator : UtilityScoreAggregator
 	{
 		public override int Aggregate(IReadOnlyList<IUtilityAction> actions, IUtilityContext context)
@@ -26,7 +28,6 @@ namespace DTech.UtilityAI
 			float randomUtility = Random.Range(0f, totalUtility);
 			for (int i = 0; i < utilities.Count; i++)
 			{
-				// A zero weight must never win, and Random.Range includes both ends for floats.
 				if (utilities[i] <= 0f)
 				{
 					continue;
@@ -43,7 +44,6 @@ namespace DTech.UtilityAI
 			
 			utilities.Clear();
 			ListPool<float>.Release(utilities);
-			// Rounding error over many weights can leave a remainder after the last subtraction.
 			return randomIndex >= 0 ? randomIndex : lastPositiveIndex;
 		}
 

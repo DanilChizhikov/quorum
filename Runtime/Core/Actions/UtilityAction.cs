@@ -1,9 +1,11 @@
 using System;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace DTech.UtilityAI
 {
 	[Serializable]
+	[Preserve]
 	public abstract class UtilityAction : IUtilityAction
 	{
 		[SerializeReference]
@@ -29,7 +31,6 @@ namespace DTech.UtilityAI
 		/// duplicated and references to shared assets stay shared. Override it when a reference
 		/// field holds per-agent state that two brains must not share.
 		/// </summary>
-		/// <returns>Copy of this action for one brain.</returns>
 		public virtual UtilityAction Clone()
 		{
 			var clone = (UtilityAction)MemberwiseClone();
@@ -47,6 +48,7 @@ namespace DTech.UtilityAI
 		public abstract void Exit(IUtilityContext context);
 	}
 
+	[Preserve]
 	public abstract class UtilityAction<TAgent, TContext> : UtilityAction
 		where TAgent : IUtilityAgent
 		where TContext : UtilityContext<TAgent>
@@ -116,10 +118,6 @@ namespace DTech.UtilityAI
 
 		protected abstract void Exit(TContext context);
 
-		/// <summary>
-		/// An action built for another context cannot run: without a log it only looks like an action
-		/// that never wins, so the mismatch is reported once per instance in the editor.
-		/// </summary>
 		private bool TryGetContext(IUtilityContext context, out TContext genericContext)
 		{
 			if (context is TContext typedContext)

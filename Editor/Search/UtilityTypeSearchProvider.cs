@@ -15,11 +15,8 @@ namespace DTech.UtilityAI.Editor
 		private string _title;
 		private IReadOnlyList<UtilityTypeOption> _options;
 		private Action<Type> _onTypeSelected;
+		private int _generation;
 		
-		/// <summary>
-		/// Reuses one instance: a provider created per picker leaks a ScriptableObject every time the
-		/// window closes without a selection, and only one picker is open at a time.
-		/// </summary>
 		public static UtilityTypeSearchProvider Create(string title, IReadOnlyList<UtilityTypeOption> options, Action<Type> onTypeSelected)
 		{
 			if (_provider == null)
@@ -31,6 +28,7 @@ namespace DTech.UtilityAI.Editor
 			_provider._title = title;
 			_provider._options = options;
 			_provider._onTypeSelected = onTypeSelected;
+			_provider._generation++;
 			return _provider;
 		}
 		
@@ -43,13 +41,14 @@ namespace DTech.UtilityAI.Editor
 		
 		List<SearchTreeEntry> ISearchWindowProvider.CreateSearchTree(SearchWindowContext context)
 		{
+			int generation = _generation;
 			var tree = new List<SearchTreeEntry>
 			{
 				new SearchTreeGroupEntry(new GUIContent(_title), 0),
 				new SearchTreeEntry(new GUIContent(NoneEntryName))
 				{
 					level = 1,
-					userData = null,
+					userData = new Entry(generation, null),
 				},
 			};
 			
@@ -73,7 +72,7 @@ namespace DTech.UtilityAI.Editor
 						tree.Add(new SearchTreeEntry(GetEntryContent(option))
 						{
 							level = level,
-							userData = option,
+							userData = new Entry(generation, option),
 						});
 						
 						continue;
@@ -91,12 +90,34 @@ namespace DTech.UtilityAI.Editor
 		
 		bool ISearchWindowProvider.OnSelectEntry(SearchTreeEntry searchTreeEntry, SearchWindowContext context)
 		{
-			var option = searchTreeEntry.userData as UtilityTypeOption;
+			if (searchTreeEntry.userData is not Entry entry || entry.Generation != _generation)
+			{
+				return true;
+			}
+			
 			Action<Type> onTypeSelected = _onTypeSelected;
 			_options = null;
 			_onTypeSelected = null;
-			onTypeSelected?.Invoke(option?.Type);
+			onTypeSelected?.Invoke(entry.Option?.Type);
 			return true;
+		}
+		
+		private void OnDisable()
+		{
+			_options = null;
+			_onTypeSelected = null;
+		}
+		
+		private readonly struct Entry
+		{
+			public int Generation { get; }
+			public UtilityTypeOption Option { get; }
+			
+			public Entry(int generation, UtilityTypeOption option)
+			{
+				Generation = generation;
+				Option = option;
+			}
 		}
 	}
 }

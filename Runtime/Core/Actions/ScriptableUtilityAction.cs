@@ -1,7 +1,9 @@
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace DTech.UtilityAI
 {
+	[Preserve]
 	public abstract class ScriptableUtilityAction : ScriptableObject, IUtilityAction
 	{
 		[SerializeReference]
@@ -26,6 +28,7 @@ namespace DTech.UtilityAI
 		public abstract void Exit(IUtilityContext context);
 	}
 	
+	[Preserve]
 	public abstract class ScriptableUtilityAction<TAgent, TContext> : ScriptableUtilityAction
 		where TAgent : IUtilityAgent
 		where TContext : UtilityContext<TAgent>
@@ -90,10 +93,6 @@ namespace DTech.UtilityAI
 		protected abstract float CalculateUtility(TContext context);
 		protected abstract void Exit(TContext context);
 
-		/// <summary>
-		/// An action built for another context cannot run: without a log it only looks like an action
-		/// that never wins, so the mismatch is reported once per asset in the editor.
-		/// </summary>
 		private bool TryGetContext(IUtilityContext context, out TContext genericContext)
 		{
 			if (context is TContext typedContext)

@@ -121,10 +121,6 @@ namespace DTech.UtilityAI.Editor
 			AssignValue(targetObject, propertyPath, type != null ? Activator.CreateInstance(type) : null);
 		}
 		
-		/// <summary>
-		/// Builds the <see cref="SerializedObject"/> here instead of capturing one: a menu or search
-		/// window callback runs a frame later, where a captured one may point at a destroyed target.
-		/// </summary>
 		private static void AssignValue(Object targetObject, string propertyPath, object value)
 		{
 			if (targetObject == null)
@@ -132,7 +128,7 @@ namespace DTech.UtilityAI.Editor
 				return;
 			}
 			
-			var serializedObject = new SerializedObject(targetObject);
+			using var serializedObject = new SerializedObject(targetObject);
 			SerializedProperty property = serializedObject.FindProperty(propertyPath);
 			if (property == null)
 			{
